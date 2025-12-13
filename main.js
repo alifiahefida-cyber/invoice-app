@@ -3,7 +3,7 @@
 // =====================
 (function () {
   const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbyUdceUmraYnJAAmkxs2aobU6S5EZQZ2vhs0sId5l4l5CSLygsix9f5ERxF2KLlV9mS/exec";
+    "https://script.google.com/macros/s/AKfycbyzeCDH_BpgPs_0SF1rNZn4u9OCOK88uKjAmHwTeaTRNYlZSuZF94U-1_FC3d4pViE/exec";
 
   const PRICE_URL = WEB_APP_URL + "?action=pricelist";
   const NAME_KEY = "Name";
@@ -192,3 +192,4 @@
       );
   });
 })();
+
