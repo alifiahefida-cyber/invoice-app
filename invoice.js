@@ -35,6 +35,14 @@ alert("INVOICE.JS TERBARU KELOAD");
   function formatNumber(n) {
     return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
   }
+function formatDateDMY(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
 
   // ===================================================
   // SAVE KE DATABASE (JSONP — AMAN DARI CORS)
@@ -129,7 +137,7 @@ alert("INVOICE.JS TERBARU KELOAD");
       namaPenerima: receiverName,
       noHpPenerima: receiverPhone,
       alamatPenerima: receiverAddress,
-      tanggalPengirim: shippingDate,
+     tanggalPengirim: formatDateDMY(shippingDate),
       subtotal,
       delivery,
       total,
@@ -172,7 +180,8 @@ alert("INVOICE.JS TERBARU KELOAD");
     ctx.textAlign = "right";
     ctx.fillText(noInvoice, 1450, 575);
     ctx.fillText(invoiceDate, 1450, 650);
-    ctx.fillText(shippingDate || "-", 1450, 725);
+    ctx.fillText(formatDateDMY(shippingDate) || "-", 1450, 725);
+
 
     let y = 925;
     items.forEach(it => {
@@ -202,6 +211,7 @@ alert("INVOICE.JS TERBARU KELOAD");
   };
 
 })();
+
 
 
 
