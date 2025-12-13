@@ -4,7 +4,7 @@
   //  KONFIGURASI PRICELIST (APPS SCRIPT)
   //  Ubah WEB_APP_URL kalau deploy Apps Script-mu beda
   // =====================
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwM9BXJjAtyl0UEjJiwqV-aVYmhtvY_b3sf8JAZDfiLrUqNGnptjk1I3KztOzEETeRi/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyLpZ-RdrrKFMh0RvpdfNCWqGaPwj47C6oZqk91k7PWbRj1BSertFaSdLkBDEqpUuds/exec";
   const PRICE_DB_URL = normalizeUrl(WEB_APP_URL) + (WEB_APP_URL.includes("?") ? "&" : "?") + "action=pricelist";
 
   // =====================
@@ -236,3 +236,4 @@
   });
 
 })(); // end IIFE main.js
+
