@@ -30,13 +30,14 @@
   }
 
   function formatNumber(n) {
-    return new Intl.NumberFormat("id-ID").format(n || 0);
+    return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
   }
 
   // ===================== JSONP SAVE (ANTI CORS) =====================
   function saveInvoiceToDb(payload) {
     return new Promise((resolve, reject) => {
       const cb = "__save_cb_" + Math.random().toString(36).slice(2);
+
       window[cb] = function (res) {
         delete window[cb];
         document.getElementById(cb)?.remove();
@@ -54,7 +55,7 @@
         "&payload=" + encodeURIComponent(b64) +
         "&callback=" + cb;
 
-      script.onerror = () => reject("Gagal load script JSONP");
+      script.onerror = () => reject("JSONP gagal");
       document.body.appendChild(script);
     });
   }
@@ -63,7 +64,7 @@
   window.generateInvoice = async function () {
 
     // ---------- ambil data ----------
-    const customer = customerName = document.getElementById("customer").value.trim();
+    const customer = document.getElementById("customer").value.trim();
     const wa = document.getElementById("wa").value.trim();
     const receiverName = document.getElementById("receiverName").value.trim();
     const receiverPhone = document.getElementById("receiverPhone").value.trim();
@@ -87,6 +88,7 @@
       const item = row.querySelector(".productInput")?.value.trim();
       const qty = parseNumber(row.querySelector(".qty")?.value);
       const price = parseNumber(row.querySelector(".price")?.value);
+
       if (item && qty > 0) {
         items.push({
           item,
@@ -102,22 +104,27 @@
       return;
     }
 
-    // ---------- nomor invoice ----------
+    // ---------- nomor invoice (YYMMXXX, +2) ----------
     const now = new Date();
     const invoiceDate = formatDateId(now);
-    const prefix = String(now.getFullYear()).slice(-2) + String(now.getMonth()+1).padStart(2,"0");
-    const seq = (Number(localStorage.getItem("lastSeq")) || 0) + 2;
-    localStorage.setItem("lastSeq", seq);
-    const noInvoice = prefix + String(seq).padStart(3,"0");
+    const prefix =
+      String(now.getFullYear()).slice(-2) +
+      String(now.getMonth() + 1).padStart(2, "0");
+
+    const last = Number(localStorage.getItem("lastInvoiceSeq") || 0);
+    const seq = last + 2;
+    localStorage.setItem("lastInvoiceSeq", seq);
+
+    const noInvoice = prefix + String(seq).padStart(3, "0");
 
     // =====================
-    // 1️⃣ DRAW CANVAS (PASTI MUNCUL)
+    // 1️⃣ DRAW CANVAS (PREVIEW)
     // =====================
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
 
     if (!templateLoaded) {
-      await new Promise(r => templateImg.onload = r);
+      await new Promise(r => (templateImg.onload = r));
     }
 
     canvas.width = templateImg.width;
@@ -149,20 +156,19 @@
       y += 60;
     });
 
+    ctx.textAlign = "right";
     ctx.fillText(formatNumber(subtotal), 1475, 1755);
     ctx.fillText(formatNumber(delivery), 1475, 1840);
     ctx.fillText(formatNumber(total), 1475, 1915);
 
     const img = canvas.toDataURL("image/png");
-    document.getElementById("invoicePreview").src = img;
-if (previewEl) {
-  previewEl.src = img;
-  previewEl.style.display = "block";
-  previewEl.style.visibility = "visible";
-  previewEl.style.opacity = "1";
-}
+    const previewEl = document.getElementById("invoicePreview");
+    previewEl.src = img;
+    previewEl.style.display = "block";
+    previewEl.style.visibility = "visible";
+
     // =====================
-    // 2️⃣ SIMPAN DATABASE (PASTI MASUK)
+    // 2️⃣ SIMPAN KE DATABASE
     // =====================
     const payload = {
       noInvoice,
@@ -175,20 +181,18 @@ if (previewEl) {
       subtotal,
       delivery,
       total,
-      items // ⬅️ INI KUNCI UTAMA
+      items // ⬅️ WAJIB untuk Apps Script
     };
 
     try {
       const res = await saveInvoiceToDb(payload);
-      if (!res.ok) throw res.error;
+      if (!res || !res.ok) throw res?.error || "Save gagal";
       document.getElementById("editInvoiceNo").value = noInvoice;
       alert("Invoice berhasil dibuat & disimpan");
     } catch (err) {
       console.error(err);
-      alert("Preview muncul, tapi gagal simpan ke database");
+      alert("Preview berhasil, tapi gagal simpan ke database");
     }
   };
 
 })();
-
-
