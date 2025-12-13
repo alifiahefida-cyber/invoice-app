@@ -1,3 +1,5 @@
+alert("INVOICE.JS TERBARU KELOAD");
+
 // =====================================================
 // invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
 // DB sebagai sumber nomor invoice
@@ -190,4 +192,5 @@
   };
 
 })();
+
 
