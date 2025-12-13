@@ -1,5 +1,5 @@
 // =====================
-// main.js — FINAL
+// main.js — FINAL FIX
 // =====================
 (function () {
   const WEB_APP_URL =
@@ -11,6 +11,9 @@
 
   let PRODUCT_LIST = [];
 
+  // =====================
+  // HELPER
+  // =====================
   function parseNumber(x) {
     return Number(
       String(x || "")
@@ -25,19 +28,39 @@
   }
 
   // =====================
-  // LOAD HARGA
+  // LOAD HARGA (FIX)
   // =====================
   async function loadHarga() {
-    const res = await fetch(PRICE_URL, { cache: "no-store" });
-    const json = await res.json();
-    PRODUCT_LIST = json.harga || [];
-    document.querySelectorAll(".item-row").forEach(setupRow);
+    try {
+      const res = await fetch(PRICE_URL, { cache: "no-store" });
+      const json = await res.json();
+
+      // 🔴 FIX: Apps Script tidak kirim `ok`
+      if (!Array.isArray(json.harga)) {
+        throw "Data harga tidak valid";
+      }
+
+      PRODUCT_LIST = json.harga;
+
+      // 🔴 FIX: pasang autocomplete ke row pertama
+      document.querySelectorAll(".item-row").forEach(setupRow);
+
+    } catch (err) {
+      console.error(err);
+      alert("Gagal memuat harga");
+    }
   }
 
+  // =====================
+  // AUTOCOMPLETE PRODUK
+  // =====================
   function setupRow(row) {
     const input = row.querySelector(".productInput");
     const priceEl = row.querySelector(".price");
     const suggest = row.querySelector(".product-suggest");
+    const qtyEl = row.querySelector(".qty");
+
+    if (!input || !priceEl || !suggest) return;
 
     input.addEventListener("input", () => {
       const q = input.value.toLowerCase();
@@ -49,17 +72,22 @@
       }
 
       PRODUCT_LIST
-        .filter(p => String(p[NAME_KEY]).toLowerCase().includes(q))
+        .filter(p =>
+          String(p[NAME_KEY]).toLowerCase().includes(q)
+        )
         .forEach(p => {
           const div = document.createElement("div");
           div.className = "item";
           div.textContent = p[NAME_KEY];
+
           div.onclick = () => {
             input.value = p[NAME_KEY];
             priceEl.value = formatNumber(p[PRICE_KEY]);
+            qtyEl.value = 1;
             suggest.style.display = "none";
             updateTotals();
           };
+
           suggest.appendChild(div);
         });
 
@@ -77,12 +105,20 @@
       const qty = parseNumber(row.querySelector(".qty").value);
       const price = parseNumber(row.querySelector(".price").value);
       const amount = qty * price;
-      row.querySelector(".amount").textContent = formatNumber(amount);
+
+      row.querySelector(".amount").textContent =
+        formatNumber(amount);
+
       subtotal += amount;
     });
 
-    document.getElementById("subtotal").textContent = formatNumber(subtotal);
-    const delivery = parseNumber(document.getElementById("delivery").value);
+    document.getElementById("subtotal").textContent =
+      formatNumber(subtotal);
+
+    const delivery = parseNumber(
+      document.getElementById("delivery").value
+    );
+
     document.getElementById("total").textContent =
       formatNumber(subtotal + delivery);
   };
@@ -97,7 +133,7 @@
 
     row.innerHTML = `
       <div style="position:relative">
-        <input class="productInput" type="text">
+        <input class="productInput" type="text" placeholder="Nama produk">
         <div class="product-suggest"></div>
       </div>
       <input class="qty" type="number" min="1" value="1">
@@ -107,6 +143,7 @@
     `;
 
     list.appendChild(row);
+
     row.querySelector(".qty").oninput = updateTotals;
     row.querySelector(".price").oninput = updateTotals;
     row.querySelector(".removeItemBtn").onclick = () => {
@@ -114,8 +151,20 @@
       updateTotals();
     };
 
+    // 🔴 FIX: pasang autocomplete ke row baru
     setupRow(row);
   };
 
-  window.addEventListener("load", loadHarga);
+  // =====================
+  // INIT
+  // =====================
+  window.addEventListener("load", () => {
+    loadHarga();
+
+    document
+      .querySelectorAll(".qty, .price")
+      .forEach(el =>
+        el.addEventListener("input", updateTotals)
+      );
+  });
 })();
