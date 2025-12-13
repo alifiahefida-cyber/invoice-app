@@ -40,26 +40,36 @@ alert("INVOICE.JS TERBARU KELOAD");
   // SAVE KE DATABASE (JSONP — AMAN DARI CORS)
   // ===================================================
   function saveInvoiceToDb(payload) {
-    return new Promise((resolve, reject) => {
-      const cb = "__save_cb_" + Date.now();
+  return new Promise((resolve, reject) => {
+    const cb = "__save_cb_" + Date.now();
+    let done = false;
 
-      window[cb] = function (res) {
-        delete window[cb];
-        script.remove();
-        resolve(res);
-      };
+    window[cb] = function (res) {
+      done = true;
+      delete window[cb];
+      script.remove();
+      resolve(res);
+    };
 
-      const json = JSON.stringify(payload);
-      const b64 = btoa(unescape(encodeURIComponent(json)));
+    const json = JSON.stringify(payload);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
 
-      const script = document.createElement("script");
-      script.src =
-        WEB_APP_URL +
-        "?action=saveinvoice" +
-        "&payload=" + encodeURIComponent(b64) +
-        "&callback=" + cb;
+    const script = document.createElement("script");
+    script.src =
+      WEB_APP_URL +
+      "?action=saveinvoice" +
+      "&payload=" + encodeURIComponent(b64) +
+      "&callback=" + cb;
 
-      script.onerror = () => reject("JSONP gagal");
+    script.onerror = () => {
+      if (!done) reject("JSONP gagal");
+    };
+
+    document.body.appendChild(script);
+  });
+}
+
+
       document.body.appendChild(script);
     });
   }
@@ -192,5 +202,6 @@ alert("INVOICE.JS TERBARU KELOAD");
   };
 
 })();
+
 
 
