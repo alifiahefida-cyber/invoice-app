@@ -7,7 +7,7 @@
 
   // ===================== CONFIG =====================
   const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbwR8A1PyQskcryPs8C3WKVv1tjs8SMBJClrNwZCqH1bFwq1-J7C5CiKuh6pmTmmBTXf/exec";
+    "https://script.google.com/macros/s/AKfycbzvdMFELdWnSHfgZnvVox_DxO3JiDpiV0qKf0_Ik2SlneCQYdKDj2Amg7dsAWV4JyY8/exec";
 
   // ===================== TEMPLATE =====================
   const TEMPLATE_SRC = "./invoice-template.png";
@@ -190,3 +190,4 @@
   };
 
 })();
+
