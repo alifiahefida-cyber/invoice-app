@@ -1,13 +1,14 @@
 // =====================
-// main.js — FIX MINIMAL + DEBUG
+// main.js — FINAL STABLE
 // =====================
 (function () {
   const WEB_APP_URL =
     "https://script.google.com/macros/s/AKfycbxrlKIwLq4chQc7oUtzUdMZWTl-11ce_xoIq7nGiZBL1uyCBG9SLUOp9qICUTzPj-ho/exec";
 
   const PRICE_URL = WEB_APP_URL + "?action=pricelist";
-  const NAME_KEY = "Name";
-  const PRICE_KEY = "Price";
+
+  const NAME_KEY_CANDIDATES = ["Name", "Nama", "Item", "Produk", "Product"];
+  const PRICE_KEY_CANDIDATES = ["Price", "Harga", "Amount"];
 
   let PRODUCT_LIST = [];
 
@@ -24,91 +25,67 @@
     return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
   }
 
+  function getNameField(o) {
+    return NAME_KEY_CANDIDATES.find(k => o[k] !== undefined);
+  }
+  function getPriceField(o) {
+    return PRICE_KEY_CANDIDATES.find(k => o[k] !== undefined);
+  }
+
   // =====================
-  // LOAD HARGA (FIX FETCH + DEBUG)
+  // LOAD HARGA
   // =====================
   async function loadHarga() {
     try {
-      console.log("FETCHING:", PRICE_URL);
-
       const res = await fetch(PRICE_URL, {
-        method: "GET",
         redirect: "follow",
         cache: "no-store"
       });
-
-      console.log("FETCH STATUS:", res.status, res.url);
-
-      if (!res.ok) {
-        throw "HTTP " + res.status;
-      }
-
+      if (!res.ok) throw res.status;
       const json = await res.json();
-      console.log("RESPONSE JSON:", json);
-
-      if (!Array.isArray(json.harga)) {
-        throw "Data harga tidak valid";
-      }
-
+      if (!Array.isArray(json.harga)) throw "format salah";
       PRODUCT_LIST = json.harga;
-
-      alert("Harga loaded: " + PRODUCT_LIST.length);
-      console.log("PRODUCT_LIST:", PRODUCT_LIST);
-
       document.querySelectorAll(".item-row").forEach(setupRow);
-
     } catch (err) {
-      console.error("GAGAL LOAD HARGA:", err);
+      console.error(err);
       alert("Gagal memuat harga");
     }
   }
 
   // =====================
-  // AUTOCOMPLETE (DEBUG)
+  // AUTOCOMPLETE
   // =====================
   function setupRow(row) {
-    console.log("setupRow dipanggil:", row);
-
     const input = row.querySelector(".productInput");
     const priceEl = row.querySelector(".price");
     const suggest = row.querySelector(".product-suggest");
     const qtyEl = row.querySelector(".qty");
 
-    if (!input || !priceEl || !suggest) {
-      console.warn("ROW TIDAK LENGKAP", row);
-      return;
-    }
+    if (!input || !priceEl || !suggest) return;
 
     input.parentElement.style.position = "relative";
     suggest.style.position = "absolute";
     suggest.style.zIndex = "9999";
 
     input.addEventListener("input", () => {
-      console.log("INPUT:", input.value);
-
       const q = input.value.toLowerCase();
       suggest.innerHTML = "";
+      if (!q) return (suggest.style.display = "none");
 
-      if (!q) {
-        suggest.style.display = "none";
-        return;
-      }
+      PRODUCT_LIST.filter(p => {
+        const nk = getNameField(p);
+        return nk && String(p[nk]).toLowerCase().includes(q);
+      }).forEach(p => {
+        const nk = getNameField(p);
+        const pk = getPriceField(p);
 
-      const matches = PRODUCT_LIST.filter(p =>
-        String(p[NAME_KEY]).toLowerCase().includes(q)
-      );
-
-      console.log("MATCHES:", matches.map(m => m[NAME_KEY]));
-
-      matches.forEach(p => {
         const div = document.createElement("div");
         div.className = "item";
-        div.textContent = p[NAME_KEY];
+        div.textContent = p[nk];
 
         div.onmousedown = () => {
-          console.log("PILIH ITEM:", p[NAME_KEY]);
-          input.value = p[NAME_KEY];
-          priceEl.value = formatNumber(p[PRICE_KEY]);
+          input.value = p[nk];
+          priceEl.value = formatNumber(p[pk]);
           qtyEl.value = 1;
           suggest.style.display = "none";
           updateTotals();
@@ -126,31 +103,21 @@
   // =====================
   window.updateTotals = function () {
     let subtotal = 0;
-
     document.querySelectorAll(".item-row").forEach(row => {
       const qty = parseNumber(row.querySelector(".qty").value);
       const price = parseNumber(row.querySelector(".price").value);
       const amount = qty * price;
-
-      row.querySelector(".amount").textContent =
-        formatNumber(amount);
-
+      row.querySelector(".amount").textContent = formatNumber(amount);
       subtotal += amount;
     });
 
-    document.getElementById("subtotal").textContent =
-      formatNumber(subtotal);
-
-    const delivery = parseNumber(
-      document.getElementById("delivery").value
-    );
-
-    document.getElementById("total").textContent =
-      formatNumber(subtotal + delivery);
+    document.getElementById("subtotal").textContent = formatNumber(subtotal);
+    const delivery = parseNumber(document.getElementById("delivery").value);
+    document.getElementById("total").textContent = formatNumber(subtotal + delivery);
   };
 
   // =====================
-  // TAMBAH ITEM
+  // ADD ITEM
   // =====================
   window.addItemRow = function () {
     const list = document.getElementById("itemList");
@@ -169,7 +136,6 @@
     `;
 
     list.appendChild(row);
-
     row.querySelector(".qty").oninput = updateTotals;
     row.querySelector(".price").oninput = updateTotals;
     row.querySelector(".removeItemBtn").onclick = () => {
@@ -180,17 +146,5 @@
     setupRow(row);
   };
 
-  // =====================
-  // INIT
-  // =====================
-  window.addEventListener("load", () => {
-    loadHarga();
-    document
-      .querySelectorAll(".qty, .price")
-      .forEach(el =>
-        el.addEventListener("input", updateTotals)
-      );
-  });
+  window.addEventListener("load", loadHarga);
 })();
-
-
