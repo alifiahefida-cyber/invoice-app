@@ -1,6 +1,6 @@
 // =====================================================
-// invoice.js — FINAL STABLE
-// preview muncul + database tersimpan
+// invoice.js — FINAL (DB sebagai sumber nomor invoice)
+// preview muncul + database PASTI konsisten
 // =====================================================
 (function () {
 
@@ -104,21 +104,38 @@
       return;
     }
 
-    // ---------- nomor invoice (YYMMXXX, +2) ----------
-    const now = new Date();
-    const invoiceDate = formatDateId(now);
-    const prefix =
-      String(now.getFullYear()).slice(-2) +
-      String(now.getMonth() + 1).padStart(2, "0");
-
-    const last = Number(localStorage.getItem("lastInvoiceSeq") || 0);
-    const seq = last + 2;
-    localStorage.setItem("lastInvoiceSeq", seq);
-
-    const noInvoice = prefix + String(seq).padStart(3, "0");
+    const invoiceDate = formatDateId(new Date());
 
     // =====================
-    // 1️⃣ DRAW CANVAS (PREVIEW)
+    // 1️⃣ SIMPAN KE DATABASE (SERVER YANG TENTUKAN NO INVOICE)
+    // =====================
+    const payload = {
+      namaPemesan: customer,
+      noHpPemesan: wa,
+      namaPenerima: receiverName,
+      noHpPenerima: receiverPhone,
+      alamatPenerima: receiverAddress,
+      tanggalPengirim: shippingDate,
+      subtotal,
+      delivery,
+      total,
+      items
+    };
+
+    let noInvoice;
+    try {
+      const res = await saveInvoiceToDb(payload);
+      if (!res || !res.ok) throw res?.error || "Save gagal";
+      noInvoice = res.noInvoice;
+      document.getElementById("editInvoiceNo").value = noInvoice;
+    } catch (err) {
+      console.error(err);
+      alert("Gagal simpan ke database");
+      return;
+    }
+
+    // =====================
+    // 2️⃣ BARU DRAW CANVAS (PAKAI noInvoice DARI DB)
     // =====================
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
@@ -167,32 +184,7 @@
     previewEl.style.display = "block";
     previewEl.style.visibility = "visible";
 
-    // =====================
-    // 2️⃣ SIMPAN KE DATABASE
-    // =====================
-    const payload = {
-      noInvoice,
-      namaPemesan: customer,
-      noHpPemesan: wa,
-      namaPenerima: receiverName,
-      noHpPenerima: receiverPhone,
-      alamatPenerima: receiverAddress,
-      tanggalPengirim: shippingDate,
-      subtotal,
-      delivery,
-      total,
-      items // ⬅️ WAJIB untuk Apps Script
-    };
-
-    try {
-      const res = await saveInvoiceToDb(payload);
-      if (!res || !res.ok) throw res?.error || "Save gagal";
-      document.getElementById("editInvoiceNo").value = noInvoice;
-      alert("Invoice berhasil dibuat & disimpan");
-    } catch (err) {
-      console.error(err);
-      alert("Preview berhasil, tapi gagal simpan ke database");
-    }
+    alert("Invoice berhasil dibuat & tersimpan di database");
   };
 
 })();
