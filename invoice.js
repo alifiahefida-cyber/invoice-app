@@ -155,7 +155,12 @@
 
     const img = canvas.toDataURL("image/png");
     document.getElementById("invoicePreview").src = img;
-
+if (previewEl) {
+  previewEl.src = img;
+  previewEl.style.display = "block";
+  previewEl.style.visibility = "visible";
+  previewEl.style.opacity = "1";
+}
     // =====================
     // 2️⃣ SIMPAN DATABASE (PASTI MASUK)
     // =====================
@@ -185,4 +190,5 @@
   };
 
 })();
+
 
