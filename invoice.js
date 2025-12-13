@@ -9,7 +9,7 @@
     "https://script.google.com/macros/s/AKfycbxrlKIwLq4chQc7oUtzUdMZWTl-11ce_xoIq7nGiZBL1uyCBG9SLUOp9qICUTzPj-ho/exec";
 
   // ===================== TEMPLATE =====================
-  const TEMPLATE_SRC = "./src/invoice-template.png";
+  const TEMPLATE_SRC = "./invoice-template.png";
   const templateImg = new Image();
   let templateLoaded = false;
   templateImg.onload = () => (templateLoaded = true);
@@ -185,3 +185,4 @@
   };
 
 })();
+
