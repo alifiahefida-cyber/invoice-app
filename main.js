@@ -7,7 +7,7 @@
   // CONFIG
   // =====================
   const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbwJ4-w6e5s1Fk93kMAxMglfw4L-4q_FFtoNnLmSrGpqg5s0nFuPKozPKCcE34lmO5ln/exec";
+    "https://script.google.com/macros/s/AKfycbwR8A1PyQskcryPs8C3WKVv1tjs8SMBJClrNwZCqH1bFwq1-J7C5CiKuh6pmTmmBTXf/exec";
 
   const PRICE_URL = WEB_APP_URL + "?action=pricelist";
 
@@ -182,4 +182,5 @@
   });
 
 })();
+
 
