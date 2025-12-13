@@ -1,4 +1,4 @@
-alert("MAIN.JS KELOAD");
+
 // =====================
 // main.js — FINAL STABLE
 // =====================
@@ -183,6 +183,7 @@ alert("MAIN.JS KELOAD");
   });
 
 })();
+
 
 
 
