@@ -1,5 +1,5 @@
 // =====================
-// main.js — FINAL FIX
+// main.js — FIX MINIMAL
 // =====================
 (function () {
   const WEB_APP_URL =
@@ -11,9 +11,6 @@
 
   let PRODUCT_LIST = [];
 
-  // =====================
-  // HELPER
-  // =====================
   function parseNumber(x) {
     return Number(
       String(x || "")
@@ -28,21 +25,18 @@
   }
 
   // =====================
-  // LOAD HARGA (FIX)
+  // LOAD HARGA
   // =====================
   async function loadHarga() {
     try {
       const res = await fetch(PRICE_URL, { cache: "no-store" });
       const json = await res.json();
 
-      // 🔴 FIX: Apps Script tidak kirim `ok`
       if (!Array.isArray(json.harga)) {
         throw "Data harga tidak valid";
       }
 
       PRODUCT_LIST = json.harga;
-
-      // 🔴 FIX: pasang autocomplete ke row pertama
       document.querySelectorAll(".item-row").forEach(setupRow);
 
     } catch (err) {
@@ -52,7 +46,7 @@
   }
 
   // =====================
-  // AUTOCOMPLETE PRODUK
+  // AUTOCOMPLETE (FIXED)
   // =====================
   function setupRow(row) {
     const input = row.querySelector(".productInput");
@@ -61,6 +55,13 @@
     const qtyEl = row.querySelector(".qty");
 
     if (!input || !priceEl || !suggest) return;
+
+    // 🔧 FIX 1: pastikan parent relative
+    input.parentElement.style.position = "relative";
+
+    // 🔧 FIX 2: pastikan suggest di atas
+    suggest.style.position = "absolute";
+    suggest.style.zIndex = "9999";
 
     input.addEventListener("input", () => {
       const q = input.value.toLowerCase();
@@ -72,15 +73,14 @@
       }
 
       PRODUCT_LIST
-        .filter(p =>
-          String(p[NAME_KEY]).toLowerCase().includes(q)
-        )
+        .filter(p => String(p[NAME_KEY]).toLowerCase().includes(q))
         .forEach(p => {
           const div = document.createElement("div");
           div.className = "item";
           div.textContent = p[NAME_KEY];
 
-          div.onclick = () => {
+          // 🔧 FIX 3: pakai mousedown (bukan click)
+          div.onmousedown = () => {
             input.value = p[NAME_KEY];
             priceEl.value = formatNumber(p[PRICE_KEY]);
             qtyEl.value = 1;
@@ -151,24 +151,13 @@
       updateTotals();
     };
 
-    // 🔴 FIX: pasang autocomplete ke row baru
     setupRow(row);
   };
 
-  // =====================
-  // INIT
-  // =====================
   window.addEventListener("load", () => {
     loadHarga();
-
     document
       .querySelectorAll(".qty, .price")
-      .forEach(el =>
-        el.addEventListener("input", updateTotals)
-      );
+      .forEach(el => el.addEventListener("input", updateTotals));
   });
 })();
-
-
-
-
