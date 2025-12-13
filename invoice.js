@@ -1,5 +1,5 @@
 // =====================================================
-// invoice.js — FINAL STABLE (POST → doPost)
+// invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
 // DB sebagai sumber nomor invoice
 // preview muncul SETELAH data tersimpan
 // =====================================================
@@ -34,21 +34,32 @@
     return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
   }
 
-  // ===================== SAVE KE DATABASE (POST) =====================
-  async function saveInvoiceToDb(payload) {
-    const res = await fetch(WEB_APP_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
+  // ===================================================
+  // SAVE KE DATABASE (JSONP — AMAN DARI CORS)
+  // ===================================================
+  function saveInvoiceToDb(payload) {
+    return new Promise((resolve, reject) => {
+      const cb = "__save_cb_" + Date.now();
+
+      window[cb] = function (res) {
+        delete window[cb];
+        script.remove();
+        resolve(res);
+      };
+
+      const json = JSON.stringify(payload);
+      const b64 = btoa(unescape(encodeURIComponent(json)));
+
+      const script = document.createElement("script");
+      script.src =
+        WEB_APP_URL +
+        "?action=saveinvoice" +
+        "&payload=" + encodeURIComponent(b64) +
+        "&callback=" + cb;
+
+      script.onerror = () => reject("JSONP gagal");
+      document.body.appendChild(script);
     });
-
-    if (!res.ok) {
-      throw new Error("Gagal koneksi ke server");
-    }
-
-    return await res.json();
   }
 
   // ===================== GENERATE INVOICE =====================
