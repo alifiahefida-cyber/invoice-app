@@ -5,7 +5,7 @@
   const WEB_APP_URL =
     "https://script.google.com/macros/s/AKfycbyLpZ-RdrrKFMh0RvpdfNCWqGaPwj47C6oZqk91k7PWbRj1BSertFaSdLkBDEqpUuds/exec";
 
-  const PRICE_URL = WEB_APP_URL + "?action=Harga";
+  const PRICE_URL = WEB_APP_URL + "?action=pricelist";
   const NAME_KEY = "Name";
   const PRICE_KEY = "Price";
 
@@ -168,4 +168,5 @@
       );
   });
 })();
+
 
