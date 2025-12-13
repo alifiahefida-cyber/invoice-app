@@ -1,7 +1,7 @@
 // invoice.js (final) - compatible with sheet name "invoice" for DB
 (function () {
   // ===================== CONFIG =====================
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwM9BXJjAtyl0UEjJiwqV-aVYmhtvY_b3sf8JAZDfiLrUqNGnptjk1I3KztOzEETeRi/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyLpZ-RdrrKFMh0RvpdfNCWqGaPwj47C6oZqk91k7PWbRj1BSertFaSdLkBDEqpUuds/exec";
   const PRICELIST_DB_URL = WEB_APP_URL + "?action=pricelist";
   // Note: save uses JSONP to WEB_APP_URL?action=saveInvoice&payload=...&callback=cb
 
@@ -504,3 +504,4 @@ Mohon lakukan konfirmasi setelah transfer ya, Kak.`;
   window.fetchPriceList = fetchPriceList;
 
 })(); // end IIFE invoice.js
+
