@@ -1,6 +1,7 @@
 // =====================================================
-// invoice.js — FINAL (DB sebagai sumber nomor invoice)
-// preview muncul + database PASTI konsisten
+// invoice.js — FINAL STABLE (POST → doPost)
+// DB sebagai sumber nomor invoice
+// preview muncul SETELAH data tersimpan
 // =====================================================
 (function () {
 
@@ -17,7 +18,7 @@
 
   // ===================== HELPERS =====================
   function formatDateId(d) {
-    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
   }
 
   function parseNumber(x) {
@@ -33,31 +34,21 @@
     return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
   }
 
-  // ===================== JSONP SAVE (ANTI CORS) =====================
-  function saveInvoiceToDb(payload) {
-    return new Promise((resolve, reject) => {
-      const cb = "__save_cb_" + Math.random().toString(36).slice(2);
-
-      window[cb] = function (res) {
-        delete window[cb];
-        document.getElementById(cb)?.remove();
-        resolve(res);
-      };
-
-      const json = JSON.stringify(payload);
-      const b64 = btoa(unescape(encodeURIComponent(json)));
-
-      const script = document.createElement("script");
-      script.id = cb;
-      script.src =
-        WEB_APP_URL +
-        "?action=saveInvoice" +
-        "&payload=" + encodeURIComponent(b64) +
-        "&callback=" + cb;
-
-      script.onerror = () => reject("JSONP gagal");
-      document.body.appendChild(script);
+  // ===================== SAVE KE DATABASE (POST) =====================
+  async function saveInvoiceToDb(payload) {
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
+
+    if (!res.ok) {
+      throw new Error("Gagal koneksi ke server");
+    }
+
+    return await res.json();
   }
 
   // ===================== GENERATE INVOICE =====================
@@ -107,7 +98,7 @@
     const invoiceDate = formatDateId(new Date());
 
     // =====================
-    // 1️⃣ SIMPAN KE DATABASE (SERVER YANG TENTUKAN NO INVOICE)
+    // 1️⃣ SIMPAN KE DATABASE
     // =====================
     const payload = {
       namaPemesan: customer,
@@ -135,7 +126,7 @@
     }
 
     // =====================
-    // 2️⃣ BARU DRAW CANVAS (PAKAI noInvoice DARI DB)
+    // 2️⃣ DRAW PREVIEW (SETELAH SAVE)
     // =====================
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
@@ -158,7 +149,7 @@
     ctx.textAlign = "right";
     ctx.fillText(noInvoice, 1450, 575);
     ctx.fillText(invoiceDate, 1450, 650);
-    ctx.fillText(shippingDate, 1450, 725);
+    ctx.fillText(shippingDate || "-", 1450, 725);
 
     let y = 925;
     items.forEach(it => {
@@ -188,6 +179,3 @@
   };
 
 })();
-
-
-
