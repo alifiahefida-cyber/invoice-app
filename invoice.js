@@ -1,5 +1,5 @@
 // =====================
-// invoice.js — FINAL
+// invoice.js — FINAL (CORS SAFE)
 // =====================
 (function () {
   const WEB_APP_URL =
@@ -14,19 +14,18 @@
     ) || 0;
   }
 
-  function formatNumber(n) {
-    return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
-  }
-
+  // =====================
+  // SAVE INVOICE (NO-CORS)
+  // =====================
   async function saveInvoice(payload) {
-    const res = await fetch(WEB_APP_URL, {
+    await fetch(WEB_APP_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      mode: "no-cors",        // 🔴 KUNCI UTAMA
       body: JSON.stringify(payload)
     });
-    const json = await res.json();
-    if (!json.ok) throw json.error;
-    return json.noInvoice;
+
+    // ⚠️ JANGAN baca response
+    return true;
   }
 
   // =====================
@@ -37,17 +36,20 @@
     if (!no) return alert("Isi nomor invoice");
 
     const res = await fetch(
-      WEB_APP_URL + "?action=getinvoicebyno&noInvoice=" + encodeURIComponent(no)
+      WEB_APP_URL +
+        "?action=getinvoicebyno&noInvoice=" +
+        encodeURIComponent(no)
     );
+
     const d = await res.json();
     if (!d.noInvoice) return alert("Invoice tidak ditemukan");
 
-    document.getElementById("customer").value = d.namaPemesan;
-    document.getElementById("wa").value = d.noHpPemesan;
-    document.getElementById("receiverName").value = d.namaPenerima;
-    document.getElementById("receiverPhone").value = d.noHpPenerima;
-    document.getElementById("receiverAddress").value = d.alamatPenerima;
-    document.getElementById("shippingDate").value = d.tanggalPengirim;
+    customer.value = d.namaPemesan || "";
+    wa.value = d.noHpPemesan || "";
+    receiverName.value = d.namaPenerima || "";
+    receiverPhone.value = d.noHpPenerima || "";
+    receiverAddress.value = d.alamatPenerima || "";
+    shippingDate.value = d.tanggalPengirim || "";
   };
 
   // =====================
@@ -78,15 +80,11 @@
     };
 
     try {
-      const noInvoice = await saveInvoice(payload);
-      document.getElementById("editInvoiceNo").value = noInvoice;
-      alert("Invoice berhasil dibuat: " + noInvoice);
+      await saveInvoice(payload);
+      alert("Invoice berhasil disimpan");
     } catch (err) {
-      alert("Gagal simpan invoice");
       console.error(err);
+      alert("Gagal simpan invoice");
     }
   };
 })();
-
-
-
