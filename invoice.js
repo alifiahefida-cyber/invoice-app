@@ -1,7 +1,9 @@
-alert("INVOICE.JS TERBARU KELOAD");
+alert("INVOICE.JS TERBARU2 KELOAD");
 
 // =====================================================
 // invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
+// Tanggal Rincian = Tanggal Pengiriman
+// Preview PASTI muncul
 // =====================================================
 (function () {
 
@@ -13,14 +15,23 @@ alert("INVOICE.JS TERBARU KELOAD");
   const TEMPLATE_SRC = "./invoice-template.png";
   const templateImg = new Image();
   let templateLoaded = false;
-  templateImg.onload = () => (templateLoaded = true);
+
+  templateImg.onload = () => {
+    templateLoaded = true;
+  };
   templateImg.src = TEMPLATE_SRC;
 
-  // ===================== HELPERS =====================
-  function formatDateId(d) {
-    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  function waitTemplateLoaded() {
+    if (templateLoaded) return Promise.resolve();
+    return new Promise(resolve => {
+      templateImg.onload = () => {
+        templateLoaded = true;
+        resolve();
+      };
+    });
   }
 
+  // ===================== HELPERS =====================
   function formatDateDMY(dateStr) {
     if (!dateStr) return "";
     const d = new Date(dateStr);
@@ -108,6 +119,7 @@ alert("INVOICE.JS TERBARU KELOAD");
       return;
     }
 
+    // ================= SAVE DATABASE =================
     const payload = {
       namaPemesan: customer,
       noHpPemesan: wa,
@@ -133,12 +145,11 @@ alert("INVOICE.JS TERBARU KELOAD");
       return;
     }
 
+    // ================= DRAW PREVIEW =================
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
 
-    if (!templateLoaded) {
-      await new Promise(r => (templateImg.onload = r));
-    }
+    await waitTemplateLoaded();
 
     canvas.width = templateImg.width;
     canvas.height = templateImg.height;
@@ -153,8 +164,7 @@ alert("INVOICE.JS TERBARU KELOAD");
 
     ctx.textAlign = "right";
     ctx.fillText(noInvoice, 1450, 575);
-    ctx.fillText(formatDateId(new Date()), 1450, 650);
-    ctx.fillText(formatDateDMY(shippingDate), 1450, 725);
+    ctx.fillText(formatDateDMY(shippingDate), 1450, 650);
 
     let y = 925;
     items.forEach(it => {
@@ -178,6 +188,7 @@ alert("INVOICE.JS TERBARU KELOAD");
     const previewEl = document.getElementById("invoicePreview");
     previewEl.src = img;
     previewEl.style.display = "block";
+    previewEl.style.visibility = "visible";
 
     alert("Invoice berhasil dibuat & tersimpan di database");
   };
