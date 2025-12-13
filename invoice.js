@@ -2,8 +2,6 @@ alert("INVOICE.JS TERBARU KELOAD");
 
 // =====================================================
 // invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
-// DB sebagai sumber nomor invoice
-// preview muncul SETELAH data tersimpan
 // =====================================================
 (function () {
 
@@ -20,7 +18,13 @@ alert("INVOICE.JS TERBARU KELOAD");
 
   // ===================== HELPERS =====================
   function formatDateId(d) {
-    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  }
+
+  function formatDateDMY(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
   }
 
   function parseNumber(x) {
@@ -35,48 +39,33 @@ alert("INVOICE.JS TERBARU KELOAD");
   function formatNumber(n) {
     return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
   }
-function formatDateDMY(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-}
 
-  // ===================================================
-  // SAVE KE DATABASE (JSONP — AMAN DARI CORS)
-  // ===================================================
+  // ===================== SAVE (JSONP) =====================
   function saveInvoiceToDb(payload) {
-  return new Promise((resolve, reject) => {
-    const cb = "__save_cb_" + Date.now();
-    let done = false;
+    return new Promise((resolve, reject) => {
+      const cb = "__save_cb_" + Date.now();
+      let done = false;
 
-    window[cb] = function (res) {
-      done = true;
-      delete window[cb];
-      script.remove();
-      resolve(res);
-    };
+      window[cb] = function (res) {
+        done = true;
+        delete window[cb];
+        script.remove();
+        resolve(res);
+      };
 
-    const json = JSON.stringify(payload);
-    const b64 = btoa(unescape(encodeURIComponent(json)));
+      const json = JSON.stringify(payload);
+      const b64 = btoa(unescape(encodeURIComponent(json)));
 
-    const script = document.createElement("script");
-    script.src =
-      WEB_APP_URL +
-      "?action=saveinvoice" +
-      "&payload=" + encodeURIComponent(b64) +
-      "&callback=" + cb;
+      const script = document.createElement("script");
+      script.src =
+        WEB_APP_URL +
+        "?action=saveinvoice" +
+        "&payload=" + encodeURIComponent(b64) +
+        "&callback=" + cb;
 
-    script.onerror = () => {
-      if (!done) reject("JSONP gagal");
-    };
-
-    document.body.appendChild(script);
-  });
-}
-
+      script.onerror = () => {
+        if (!done) reject("JSONP gagal");
+      };
 
       document.body.appendChild(script);
     });
@@ -85,7 +74,6 @@ function formatDateDMY(dateStr) {
   // ===================== GENERATE INVOICE =====================
   window.generateInvoice = async function () {
 
-    // ---------- ambil data ----------
     const customer = document.getElementById("customer").value.trim();
     const wa = document.getElementById("wa").value.trim();
     const receiverName = document.getElementById("receiverName").value.trim();
@@ -104,7 +92,6 @@ function formatDateDMY(dateStr) {
     const delivery = parseNumber(document.getElementById("delivery").value);
     const total = parseNumber(document.getElementById("total").textContent);
 
-    // ---------- items ----------
     const items = [];
     document.querySelectorAll(".item-row").forEach(row => {
       const item = row.querySelector(".productInput")?.value.trim();
@@ -112,12 +99,7 @@ function formatDateDMY(dateStr) {
       const price = parseNumber(row.querySelector(".price")?.value);
 
       if (item && qty > 0) {
-        items.push({
-          item,
-          qty,
-          price,
-          amount: qty * price
-        });
+        items.push({ item, qty, price, amount: qty * price });
       }
     });
 
@@ -126,18 +108,13 @@ function formatDateDMY(dateStr) {
       return;
     }
 
-    const invoiceDate = formatDateId(new Date());
-
-    // =====================
-    // 1️⃣ SIMPAN KE DATABASE
-    // =====================
     const payload = {
       namaPemesan: customer,
       noHpPemesan: wa,
       namaPenerima: receiverName,
       noHpPenerima: receiverPhone,
       alamatPenerima: receiverAddress,
-     tanggalPengirim: formatDateDMY(shippingDate),
+      tanggalPengirim: formatDateDMY(shippingDate),
       subtotal,
       delivery,
       total,
@@ -156,9 +133,6 @@ function formatDateDMY(dateStr) {
       return;
     }
 
-    // =====================
-    // 2️⃣ DRAW PREVIEW (SETELAH SAVE)
-    // =====================
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -172,16 +146,15 @@ function formatDateDMY(dateStr) {
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "37px 'Comic Sans MS'";
-    ctx.textAlign = "left";
 
+    ctx.textAlign = "left";
     ctx.fillText(customer, 200, 630);
     ctx.fillText(wa, 200, 700);
 
     ctx.textAlign = "right";
     ctx.fillText(noInvoice, 1450, 575);
-    ctx.fillText(invoiceDate, 1450, 650);
-    ctx.fillText(formatDateDMY(shippingDate) || "-", 1450, 725);
-
+    ctx.fillText(formatDateId(new Date()), 1450, 650);
+    ctx.fillText(formatDateDMY(shippingDate), 1450, 725);
 
     let y = 925;
     items.forEach(it => {
@@ -205,13 +178,8 @@ function formatDateDMY(dateStr) {
     const previewEl = document.getElementById("invoicePreview");
     previewEl.src = img;
     previewEl.style.display = "block";
-    previewEl.style.visibility = "visible";
 
     alert("Invoice berhasil dibuat & tersimpan di database");
   };
 
 })();
-
-
-
-
