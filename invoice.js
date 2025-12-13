@@ -3,7 +3,7 @@
 // =====================
 (function () {
   const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbyLpZ-RdrrKFMh0RvpdfNCWqGaPwj47C6oZqk91k7PWbRj1BSertFaSdLkBDEqpUuds/exec";
+    "https://script.google.com/macros/s/AKfycbyUdceUmraYnJAAmkxs2aobU6S5EZQZ2vhs0sId5l4l5CSLygsix9f5ERxF2KLlV9mS/exec";
 
   function parseNumber(x) {
     return Number(
@@ -87,3 +87,4 @@
     }
   };
 })();
+
