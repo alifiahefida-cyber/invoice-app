@@ -1,8 +1,8 @@
-alert("INVOICE.JS TERBARU3 KELOAD");
+alert("INVOICE.JS FINAL KELOAD");
 
 // =====================================================
 // invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
-// - Tanggal Invoice  : otomatis (hari ini) → PREVIEW SAJA
+// - Tanggal Invoice  : otomatis (hari ini) → PREVIEW
 // - Tanggal Pengirim : input user → DATABASE + PREVIEW
 // =====================================================
 (function () {
@@ -30,14 +30,15 @@ alert("INVOICE.JS TERBARU3 KELOAD");
   }
 
   // ===================== HELPERS =====================
-  function formatDateDMYFromDate(d) {
+  function formatDateDMY(d) {
     return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
   }
 
-  function formatDateDMYFromInput(dateStr) {
+  // AMAN untuk <input type="date"> (YYYY-MM-DD)
+  function formatDateFromInput(dateStr) {
     if (!dateStr) return "";
-    const d = new Date(dateStr);
-    return formatDateDMYFromDate(d);
+    const [y, m, d] = dateStr.split("-");
+    return `${d}/${m}/${y}`;
   }
 
   function parseNumber(x) {
@@ -56,8 +57,10 @@ alert("INVOICE.JS TERBARU3 KELOAD");
   // ===================== SAVE (JSONP) =====================
   function saveInvoiceToDb(payload) {
     return new Promise((resolve, reject) => {
-      const cb = "__save_cb_" + Date.now();
+      const cb = "__save_cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
       let done = false;
+
+      const script = document.createElement("script");
 
       window[cb] = function (res) {
         done = true;
@@ -66,10 +69,7 @@ alert("INVOICE.JS TERBARU3 KELOAD");
         resolve(res);
       };
 
-      const json = JSON.stringify(payload);
-      const b64 = btoa(unescape(encodeURIComponent(json)));
-
-      const script = document.createElement("script");
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
       script.src =
         WEB_APP_URL +
         "?action=saveinvoice" +
@@ -77,7 +77,11 @@ alert("INVOICE.JS TERBARU3 KELOAD");
         "&callback=" + cb;
 
       script.onerror = () => {
-        if (!done) reject("JSONP gagal");
+        if (!done) {
+          delete window[cb];
+          script.remove();
+          reject("JSONP gagal");
+        }
       };
 
       document.body.appendChild(script);
@@ -95,15 +99,8 @@ alert("INVOICE.JS TERBARU3 KELOAD");
     const receiverAddress = document.getElementById("receiverAddress").value.trim();
     const shippingDateInput = document.getElementById("shippingDate").value;
 
-    if (!customer) {
-      alert("Nama customer wajib diisi");
-      return;
-    }
-
-    if (!shippingDateInput) {
-      alert("Tanggal pengiriman wajib diisi");
-      return;
-    }
+    if (!customer) return alert("Nama customer wajib diisi");
+    if (!shippingDateInput) return alert("Tanggal pengiriman wajib diisi");
 
     if (typeof updateTotals === "function") updateTotals();
 
@@ -123,16 +120,13 @@ alert("INVOICE.JS TERBARU3 KELOAD");
       }
     });
 
-    if (!items.length) {
-      alert("Minimal 1 item");
-      return;
-    }
+    if (!items.length) return alert("Minimal 1 item");
 
     // =====================
     // TANGGAL
     // =====================
-    const tanggalInvoice = formatDateDMYFromDate(new Date());          // hari ini
-    const tanggalPengirim = formatDateDMYFromInput(shippingDateInput); // dari input
+    const tanggalInvoice  = formatDateDMY(new Date());                 // hari ini
+    const tanggalPengirim = formatDateFromInput(shippingDateInput);    // dari input
 
     // =====================
     // SAVE DATABASE
@@ -143,7 +137,7 @@ alert("INVOICE.JS TERBARU3 KELOAD");
       namaPenerima: receiverName,
       noHpPenerima: receiverPhone,
       alamatPenerima: receiverAddress,
-      tanggalPengirim: tanggalPengirim, // ⬅️ YANG DISIMPAN KE DB
+      tanggalPengirim: tanggalPengirim, // ⬅️ STRING dd/mm/yyyy
       subtotal,
       delivery,
       total,
@@ -158,8 +152,7 @@ alert("INVOICE.JS TERBARU3 KELOAD");
       document.getElementById("editInvoiceNo").value = noInvoice;
     } catch (err) {
       console.error(err);
-      alert("Gagal simpan ke database");
-      return;
+      return alert("Gagal simpan ke database");
     }
 
     // =====================
@@ -183,8 +176,8 @@ alert("INVOICE.JS TERBARU3 KELOAD");
 
     ctx.textAlign = "right";
     ctx.fillText(noInvoice, 1450, 575);
-    ctx.fillText(tanggalInvoice, 1450, 650);   // 🧾 tanggal invoice
-    ctx.fillText(tanggalPengirim, 1450, 725);  // 🚚 tanggal pengirim
+    ctx.fillText(tanggalInvoice, 1450, 650);   // 🧾 invoice
+    ctx.fillText(tanggalPengirim, 1450, 725);  // 🚚 kirim
 
     let y = 925;
     items.forEach(it => {
@@ -204,9 +197,8 @@ alert("INVOICE.JS TERBARU3 KELOAD");
     ctx.fillText(formatNumber(delivery), 1475, 1840);
     ctx.fillText(formatNumber(total), 1475, 1915);
 
-    const img = canvas.toDataURL("image/png");
     const previewEl = document.getElementById("invoicePreview");
-    previewEl.src = img;
+    previewEl.src = canvas.toDataURL("image/png");
     previewEl.style.display = "block";
     previewEl.style.visibility = "visible";
 
@@ -214,5 +206,3 @@ alert("INVOICE.JS TERBARU3 KELOAD");
   };
 
 })();
-
-
