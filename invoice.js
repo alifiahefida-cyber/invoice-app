@@ -1,9 +1,9 @@
-alert("INVOICE.JS TERBARU2 KELOAD");
+alert("INVOICE.JS TERBARU3 KELOAD");
 
 // =====================================================
 // invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
-// Tanggal Rincian = Tanggal Pengiriman
-// Preview PASTI muncul
+// - Tanggal Invoice  : otomatis (hari ini) → PREVIEW SAJA
+// - Tanggal Pengirim : input user → DATABASE + PREVIEW
 // =====================================================
 (function () {
 
@@ -16,9 +16,7 @@ alert("INVOICE.JS TERBARU2 KELOAD");
   const templateImg = new Image();
   let templateLoaded = false;
 
-  templateImg.onload = () => {
-    templateLoaded = true;
-  };
+  templateImg.onload = () => { templateLoaded = true; };
   templateImg.src = TEMPLATE_SRC;
 
   function waitTemplateLoaded() {
@@ -32,10 +30,14 @@ alert("INVOICE.JS TERBARU2 KELOAD");
   }
 
   // ===================== HELPERS =====================
-  function formatDateDMY(dateStr) {
+  function formatDateDMYFromDate(d) {
+    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  }
+
+  function formatDateDMYFromInput(dateStr) {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+    return formatDateDMYFromDate(d);
   }
 
   function parseNumber(x) {
@@ -85,15 +87,21 @@ alert("INVOICE.JS TERBARU2 KELOAD");
   // ===================== GENERATE INVOICE =====================
   window.generateInvoice = async function () {
 
+    // ===== ambil data =====
     const customer = document.getElementById("customer").value.trim();
     const wa = document.getElementById("wa").value.trim();
     const receiverName = document.getElementById("receiverName").value.trim();
     const receiverPhone = document.getElementById("receiverPhone").value.trim();
     const receiverAddress = document.getElementById("receiverAddress").value.trim();
-    const shippingDate = document.getElementById("shippingDate").value;
+    const shippingDateInput = document.getElementById("shippingDate").value;
 
     if (!customer) {
       alert("Nama customer wajib diisi");
+      return;
+    }
+
+    if (!shippingDateInput) {
+      alert("Tanggal pengiriman wajib diisi");
       return;
     }
 
@@ -103,6 +111,7 @@ alert("INVOICE.JS TERBARU2 KELOAD");
     const delivery = parseNumber(document.getElementById("delivery").value);
     const total = parseNumber(document.getElementById("total").textContent);
 
+    // ===== items =====
     const items = [];
     document.querySelectorAll(".item-row").forEach(row => {
       const item = row.querySelector(".productInput")?.value.trim();
@@ -119,14 +128,22 @@ alert("INVOICE.JS TERBARU2 KELOAD");
       return;
     }
 
-    // ================= SAVE DATABASE =================
+    // =====================
+    // TANGGAL
+    // =====================
+    const tanggalInvoice = formatDateDMYFromDate(new Date());          // hari ini
+    const tanggalPengirim = formatDateDMYFromInput(shippingDateInput); // dari input
+
+    // =====================
+    // SAVE DATABASE
+    // =====================
     const payload = {
       namaPemesan: customer,
       noHpPemesan: wa,
       namaPenerima: receiverName,
       noHpPenerima: receiverPhone,
       alamatPenerima: receiverAddress,
-      tanggalPengirim: formatDateDMY(shippingDate),
+      tanggalPengirim: tanggalPengirim, // ⬅️ YANG DISIMPAN KE DB
       subtotal,
       delivery,
       total,
@@ -145,7 +162,9 @@ alert("INVOICE.JS TERBARU2 KELOAD");
       return;
     }
 
-    // ================= DRAW PREVIEW =================
+    // =====================
+    // DRAW PREVIEW
+    // =====================
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -164,7 +183,8 @@ alert("INVOICE.JS TERBARU2 KELOAD");
 
     ctx.textAlign = "right";
     ctx.fillText(noInvoice, 1450, 575);
-    ctx.fillText(formatDateDMY(shippingDate), 1450, 650);
+    ctx.fillText(tanggalInvoice, 1450, 650);   // 🧾 tanggal invoice
+    ctx.fillText(tanggalPengirim, 1450, 725);  // 🚚 tanggal pengirim
 
     let y = 925;
     items.forEach(it => {
