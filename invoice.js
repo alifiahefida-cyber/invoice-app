@@ -1,5 +1,3 @@
-alert("INVOICE.JS FINAL KELOAD");
-
 // =====================================================
 // invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
 // - Tanggal Invoice  : otomatis (hari ini) → PREVIEW
@@ -206,3 +204,4 @@ alert("INVOICE.JS FINAL KELOAD");
   };
 
 })();
+
