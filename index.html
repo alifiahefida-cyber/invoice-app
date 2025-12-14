@@ -85,6 +85,31 @@
       margin-top:4px;
       font-size:14px;
     }
+    .preview-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.preview-actions button {
+  font-size: 16px;       /* ⬅️ BESAR */
+  padding: 12px 22px;    /* ⬅️ BESAR */
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+#downloadJpg {
+  background: #e0e0e0;
+  color: #333;
+}
+
+#shareBtn {
+  background: #3c7c5e;
+  color: #fff;
+}
+
 
     /* ✅ PREVIEW FIX */
     .preview-wrapper { text-align:center; }
@@ -209,17 +234,29 @@
       <button id="shareBtn" class="btn-primary" style="display:none">Share WA</button>
     </div>
   </div>
+<div class="card preview-wrapper">
+  <h3>Preview Invoice</h3>
 
-</div>
-  <div style="margin-top:16px; display:flex; gap:10px;">
-  <button onclick="downloadInvoiceImage()">
-    ⬇️ Download Invoice
-  </button>
+  <img id="invoicePreview" alt="Preview Invoice">
 
-  <button onclick="sendInvoiceWhatsApp()">
-    📲 Kirim via WhatsApp
-  </button>
+  <!-- TOMBOL DI BAWAH PREVIEW -->
+  <div class="actions preview-actions">
+    <button
+      id="downloadJpg"
+      onclick="downloadInvoiceImage()"
+    >
+      ⬇️ Download Invoice
+    </button>
+
+    <button
+      id="shareBtn"
+      onclick="sendInvoiceWhatsApp()"
+    >
+      📲 Kirim via WhatsApp
+    </button>
+  </div>
 </div>
+
 
 
 <!-- ✅ CANVAS (WAJIB, TAPI HIDDEN) -->
@@ -230,4 +267,5 @@
 
 </body>
 </html>
+
 
