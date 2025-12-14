@@ -212,6 +212,9 @@ window.downloadInvoiceImage = function () {
   const noInvoice =
     document.getElementById("editInvoiceNo")?.value || "invoice";
 
+  document.getElementById("downloadJpg").style.display = "inline-block";
+document.getElementById("shareBtn").style.display = "inline-block";
+
   const a = document.createElement("a");
   a.href = img.src;
   a.download = `${noInvoice}.png`; // ⬅️ NAMA FILE = NO INVOICE
@@ -254,6 +257,7 @@ H-1 Pengiriman`;
 };
 
 })();
+
 
 
 
