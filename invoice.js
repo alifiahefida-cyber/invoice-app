@@ -152,6 +152,23 @@
       console.error(err);
       return alert("Gagal simpan ke database");
     }
+window.downloadInvoiceImage = function () {
+  const img = document.getElementById("invoicePreview");
+  if (!img || !img.src) {
+    alert("Invoice belum dibuat");
+    return;
+  }
+
+  const noInvoice =
+    document.getElementById("editInvoiceNo")?.value || "invoice";
+
+  const a = document.createElement("a");
+  a.href = img.src;
+  a.download = `${noInvoice}.png`; // ⬅️ NAMA FILE = NO INVOICE
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
 
     // =====================
     // DRAW PREVIEW
@@ -204,4 +221,5 @@
   };
 
 })();
+
 
