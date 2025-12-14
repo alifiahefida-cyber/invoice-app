@@ -219,8 +219,42 @@ window.downloadInvoiceImage = function () {
   a.click();
   document.body.removeChild(a);
 };
+window.sendInvoiceWhatsApp = function () {
+  const wa = document.getElementById("wa").value.trim();
+  if (!wa) {
+    alert("Nomor WhatsApp pemesan belum diisi");
+    return;
+  }
+
+  const total = document.getElementById("total").textContent.trim();
+
+  const pesan = 
+`Halo terima kasih sudah berbelanja di Betterbutterybatter.
+
+Total belanja Rp${total}
+
+Pembayaran melalui transfer ke:
+BCA 2150294366 a.n Efira
+
+Mohon lakukan pembayaran maksimal pukul 17.00 WIB
+H-1 Pengiriman`;
+
+  // bersihkan nomor WA
+  const nomor = wa
+    .replace(/^0/, "62")
+    .replace(/[^0-9]/g, "");
+
+  const url =
+    "https://wa.me/" +
+    nomor +
+    "?text=" +
+    encodeURIComponent(pesan);
+
+  window.open(url, "_blank");
+};
 
 })();
+
 
 
 
