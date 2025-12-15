@@ -1,4 +1,4 @@
-alert("INVOICE.JS FIX FINAL KELOAD");
+alert("INVOICE.JS FIXX FINAL KELOAD");
 
 // =====================================================
 // invoice.js — FIX FINAL (PREVIEW AMAN)
@@ -116,66 +116,79 @@ alert("INVOICE.JS FIX FINAL KELOAD");
   }
 
   // ===================== GENERATE =====================
-  window.generateInvoice = async function () {
+ window.generateInvoice = async function () {
 
-    const customer = customerInput.value.trim();
-    const wa = waInput.value.trim();
-    const shippingDate = shippingDateInput.value;
+  const customer = document.getElementById("customer").value.trim();
+  const wa = document.getElementById("wa").value.trim();
+  const shippingDate = document.getElementById("shippingDate").value;
 
-    if (!customer) return alert("Nama customer wajib diisi");
-    if (!shippingDate) return alert("Tanggal kirim wajib diisi");
+  if (!customer) return alert("Nama customer wajib diisi");
+  if (!shippingDate) return alert("Tanggal kirim wajib diisi");
 
-    if (typeof updateTotals === "function") updateTotals();
+  if (typeof updateTotals === "function") updateTotals();
 
-    const subtotal = parseNumber(subtotalEl.textContent);
-    const delivery = parseNumber(deliveryInput.value);
-    const total = parseNumber(totalEl.textContent);
+  const subtotal = parseNumber(document.getElementById("subtotal").textContent);
+  const delivery = parseNumber(document.getElementById("delivery").value);
+  const total = parseNumber(document.getElementById("total").textContent);
 
-    const items = [];
-    document.querySelectorAll(".item-row").forEach(r => {
-      const item = r.querySelector(".productInput")?.value.trim();
-      const qty = parseNumber(r.querySelector(".qty")?.value);
-      const price = parseNumber(r.querySelector(".price")?.value);
-      if (item && qty > 0) items.push({ item, qty, price, amount: qty * price });
+  const items = [];
+  document.querySelectorAll(".item-row").forEach(r => {
+    const item = r.querySelector(".productInput")?.value.trim();
+    const qty = parseNumber(r.querySelector(".qty")?.value);
+    const price = parseNumber(r.querySelector(".price")?.value);
+    if (item && qty > 0) items.push({ item, qty, price, amount: qty * price });
+  });
+
+  if (!items.length) return alert("Minimal 1 item");
+
+  const tanggalInvoice = formatDateDMY(new Date());
+  const tanggalPengirim = formatDateDMY(new Date(shippingDate));
+
+  // PREVIEW DULU
+  await drawPreview({
+    customer,
+    wa,
+    items,
+    subtotal,
+    delivery,
+    total,
+    tanggalInvoice,
+    tanggalPengirim,
+    noInvoice: ""
+  });
+
+  // SAVE DATABASE
+  try {
+    const res = await saveInvoiceToDb({
+      namaPemesan: customer,
+      noHpPemesan: wa,
+      tanggalPengirim,
+      subtotal,
+      delivery,
+      total,
+      items
     });
 
-    if (!items.length) return alert("Minimal 1 item");
+    if (!res?.ok) throw res?.error;
 
-    const tanggalInvoice = formatDateDMY(new Date());
-    const tanggalPengirim = formatDateDMY(new Date(shippingDate));
+    document.getElementById("editInvoiceNo").value = res.noInvoice;
 
-    // PREVIEW DULU (PASTI MUNCUL)
     await drawPreview({
-      customer, wa, items,
-      subtotal, delivery, total,
-      tanggalInvoice, tanggalPengirim,
-      noInvoice: ""
+      customer,
+      wa,
+      items,
+      subtotal,
+      delivery,
+      total,
+      tanggalInvoice,
+      tanggalPengirim,
+      noInvoice: res.noInvoice
     });
 
-    // SAVE DB
-    try {
-      const res = await saveInvoiceToDb({
-        namaPemesan: customer,
-        noHpPemesan: wa,
-        tanggalPengirim,
-        subtotal, delivery, total,
-        items
-      });
-
-      if (!res?.ok) throw res?.error;
-      editInvoiceNo.value = res.noInvoice;
-
-      await drawPreview({
-        customer, wa, items,
-        subtotal, delivery, total,
-        tanggalInvoice, tanggalPengirim,
-        noInvoice: res.noInvoice
-      });
-
-      alert("Invoice berhasil dibuat & disimpan");
-    } catch (e) {
-      alert("Preview tampil, tapi gagal simpan database");
-    }
-  };
-
+    alert("Invoice berhasil dibuat & disimpan");
+  } catch (e) {
+    alert("Preview tampil, tapi gagal simpan database");
+  }
+};
 })();
+
