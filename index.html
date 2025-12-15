@@ -240,6 +240,32 @@
   <!-- ================= PREVIEW ================= -->
   <div class="card preview-wrapper">
     <h3>Preview Invoice</h3>
+<!-- ================= PREVIEW ================= -->
+<div class="card preview-wrapper">
+  <h3>Preview Invoice</h3>
+
+  <!-- 🔴 WAJIB ADA -->
+  <img id="invoicePreview" alt="Preview Invoice" />
+
+  <!-- TOMBOL DI BAWAH PREVIEW -->
+  <div class="actions preview-actions">
+    <button
+      id="downloadJpg"
+      style="display:none"
+      onclick="downloadInvoiceImage()"
+    >
+      ⬇️ Download Invoice
+    </button>
+
+    <button
+      id="shareBtn"
+      style="display:none"
+      onclick="sendInvoiceWhatsApp()"
+    >
+      📲 Kirim via WhatsApp
+    </button>
+  </div>
+</div>
 
 
   <!-- TOMBOL DI BAWAH PREVIEW -->
@@ -270,6 +296,7 @@
 
 </body>
 </html>
+
 
 
 
