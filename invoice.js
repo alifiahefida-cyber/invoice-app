@@ -1,9 +1,7 @@
-alert("INVOICE.JS TERBARU3 KELOAD");
+alert("INVOICE.JS FIX FINAL KELOAD");
 
 // =====================================================
-// invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
-// - Tanggal Invoice  : otomatis (hari ini) → PREVIEW SAJA
-// - Tanggal Pengirim : input user → DATABASE + PREVIEW
+// invoice.js — FIX FINAL (PREVIEW AMAN)
 // =====================================================
 (function () {
 
@@ -16,60 +14,40 @@ alert("INVOICE.JS TERBARU3 KELOAD");
   const templateImg = new Image();
   let templateLoaded = false;
 
-  templateImg.onload = () => { templateLoaded = true; };
+  templateImg.onload = () => templateLoaded = true;
   templateImg.src = TEMPLATE_SRC;
 
   function waitTemplateLoaded() {
     if (templateLoaded) return Promise.resolve();
-    return new Promise(resolve => {
-      templateImg.onload = () => {
-        templateLoaded = true;
-        resolve();
-      };
+    return new Promise(res => templateImg.onload = () => {
+      templateLoaded = true;
+      res();
     });
   }
 
   // ===================== HELPERS =====================
-  function formatDateDMYFromDate(d) {
-    return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
-  }
+  const formatDateDMY = d =>
+    `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
 
-  function formatDateDMYFromInput(dateStr) {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    return formatDateDMYFromDate(d);
-  }
+  const parseNumber = x =>
+    Number(String(x || "").replace(/\./g,"").replace(/,/g,".").replace(/[^0-9.-]/g,"")) || 0;
 
-  function parseNumber(x) {
-    return Number(
-      String(x || "")
-        .replace(/\./g, "")
-        .replace(/,/g, ".")
-        .replace(/[^0-9.-]/g, "")
-    ) || 0;
-  }
+  const formatNumber = n =>
+    new Intl.NumberFormat("id-ID").format(Number(n) || 0);
 
-  function formatNumber(n) {
-    return new Intl.NumberFormat("id-ID").format(Number(n) || 0);
-  }
-
-  // ===================== SAVE (JSONP) =====================
+  // ===================== JSONP SAVE =====================
   function saveInvoiceToDb(payload) {
     return new Promise((resolve, reject) => {
-      const cb = "__save_cb_" + Date.now();
-      let done = false;
+      const cb = "__save_cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      const script = document.createElement("script");
 
-      window[cb] = function (res) {
-        done = true;
+      window[cb] = res => {
         delete window[cb];
         script.remove();
         resolve(res);
       };
 
-      const json = JSON.stringify(payload);
-      const b64 = btoa(unescape(encodeURIComponent(json)));
-
-      const script = document.createElement("script");
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
       script.src =
         WEB_APP_URL +
         "?action=saveinvoice" +
@@ -77,94 +55,17 @@ alert("INVOICE.JS TERBARU3 KELOAD");
         "&callback=" + cb;
 
       script.onerror = () => {
-        if (!done) reject("JSONP gagal");
+        delete window[cb];
+        script.remove();
+        reject("JSONP gagal");
       };
 
       document.body.appendChild(script);
     });
   }
 
-  // ===================== GENERATE INVOICE =====================
-  window.generateInvoice = async function () {
-
-    // ===== ambil data =====
-    const customer = document.getElementById("customer").value.trim();
-    const wa = document.getElementById("wa").value.trim();
-    const receiverName = document.getElementById("receiverName").value.trim();
-    const receiverPhone = document.getElementById("receiverPhone").value.trim();
-    const receiverAddress = document.getElementById("receiverAddress").value.trim();
-    const shippingDateInput = document.getElementById("shippingDate").value;
-
-    if (!customer) {
-      alert("Nama customer wajib diisi");
-      return;
-    }
-
-    if (!shippingDateInput) {
-      alert("Tanggal pengiriman wajib diisi");
-      return;
-    }
-
-    if (typeof updateTotals === "function") updateTotals();
-
-    const subtotal = parseNumber(document.getElementById("subtotal").textContent);
-    const delivery = parseNumber(document.getElementById("delivery").value);
-    const total = parseNumber(document.getElementById("total").textContent);
-
-    // ===== items =====
-    const items = [];
-    document.querySelectorAll(".item-row").forEach(row => {
-      const item = row.querySelector(".productInput")?.value.trim();
-      const qty = parseNumber(row.querySelector(".qty")?.value);
-      const price = parseNumber(row.querySelector(".price")?.value);
-
-      if (item && qty > 0) {
-        items.push({ item, qty, price, amount: qty * price });
-      }
-    });
-
-    if (!items.length) {
-      alert("Minimal 1 item");
-      return;
-    }
-
-    // =====================
-    // TANGGAL
-    // =====================
-    const tanggalInvoice = formatDateDMYFromDate(new Date());          // hari ini
-    const tanggalPengirim = formatDateDMYFromInput(shippingDateInput); // dari input
-
-    // =====================
-    // SAVE DATABASE
-    // =====================
-    const payload = {
-      namaPemesan: customer,
-      noHpPemesan: wa,
-      namaPenerima: receiverName,
-      noHpPenerima: receiverPhone,
-      alamatPenerima: receiverAddress,
-      tanggalPengirim: tanggalPengirim, // ⬅️ YANG DISIMPAN KE DB
-      subtotal,
-      delivery,
-      total,
-      items
-    };
-
-    let noInvoice;
-    try {
-      const res = await saveInvoiceToDb(payload);
-      if (!res || !res.ok) throw res?.error || "Save gagal";
-      noInvoice = res.noInvoice;
-      document.getElementById("editInvoiceNo").value = noInvoice;
-    } catch (err) {
-      console.error(err);
-      alert("Gagal simpan ke database");
-      return;
-    }
-
-    // =====================
-    // DRAW PREVIEW
-    // =====================
+  // ===================== DRAW PREVIEW =====================
+  async function drawPreview(data) {
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -178,16 +79,16 @@ alert("INVOICE.JS TERBARU3 KELOAD");
     ctx.font = "37px 'Comic Sans MS'";
 
     ctx.textAlign = "left";
-    ctx.fillText(customer, 200, 630);
-    ctx.fillText(wa, 200, 700);
+    ctx.fillText(data.customer, 200, 630);
+    ctx.fillText(data.wa, 200, 700);
 
     ctx.textAlign = "right";
-    ctx.fillText(noInvoice, 1450, 575);
-    ctx.fillText(tanggalInvoice, 1450, 650);   // 🧾 tanggal invoice
-    ctx.fillText(tanggalPengirim, 1450, 725);  // 🚚 tanggal pengirim
+    ctx.fillText(data.noInvoice || "-", 1450, 575);
+    ctx.fillText(data.tanggalInvoice, 1450, 650);
+    ctx.fillText(data.tanggalPengirim, 1450, 725);
 
     let y = 925;
-    items.forEach(it => {
+    data.items.forEach(it => {
       ctx.textAlign = "left";
       ctx.fillText(it.item, 200, y);
       ctx.textAlign = "right";
@@ -200,9 +101,9 @@ alert("INVOICE.JS TERBARU3 KELOAD");
     });
 
     ctx.textAlign = "right";
-    ctx.fillText(formatNumber(subtotal), 1475, 1755);
-    ctx.fillText(formatNumber(delivery), 1475, 1840);
-    ctx.fillText(formatNumber(total), 1475, 1915);
+    ctx.fillText(formatNumber(data.subtotal), 1475, 1755);
+    ctx.fillText(formatNumber(data.delivery), 1475, 1840);
+    ctx.fillText(formatNumber(data.total), 1475, 1915);
 
     const img = canvas.toDataURL("image/png");
     const previewEl = document.getElementById("invoicePreview");
@@ -210,9 +111,71 @@ alert("INVOICE.JS TERBARU3 KELOAD");
     previewEl.style.display = "block";
     previewEl.style.visibility = "visible";
 
-    alert("Invoice berhasil dibuat & tersimpan di database");
+    document.getElementById("downloadJpg").style.display = "inline-block";
+    document.getElementById("shareBtn").style.display = "inline-block";
+  }
+
+  // ===================== GENERATE =====================
+  window.generateInvoice = async function () {
+
+    const customer = customerInput.value.trim();
+    const wa = waInput.value.trim();
+    const shippingDate = shippingDateInput.value;
+
+    if (!customer) return alert("Nama customer wajib diisi");
+    if (!shippingDate) return alert("Tanggal kirim wajib diisi");
+
+    if (typeof updateTotals === "function") updateTotals();
+
+    const subtotal = parseNumber(subtotalEl.textContent);
+    const delivery = parseNumber(deliveryInput.value);
+    const total = parseNumber(totalEl.textContent);
+
+    const items = [];
+    document.querySelectorAll(".item-row").forEach(r => {
+      const item = r.querySelector(".productInput")?.value.trim();
+      const qty = parseNumber(r.querySelector(".qty")?.value);
+      const price = parseNumber(r.querySelector(".price")?.value);
+      if (item && qty > 0) items.push({ item, qty, price, amount: qty * price });
+    });
+
+    if (!items.length) return alert("Minimal 1 item");
+
+    const tanggalInvoice = formatDateDMY(new Date());
+    const tanggalPengirim = formatDateDMY(new Date(shippingDate));
+
+    // PREVIEW DULU (PASTI MUNCUL)
+    await drawPreview({
+      customer, wa, items,
+      subtotal, delivery, total,
+      tanggalInvoice, tanggalPengirim,
+      noInvoice: ""
+    });
+
+    // SAVE DB
+    try {
+      const res = await saveInvoiceToDb({
+        namaPemesan: customer,
+        noHpPemesan: wa,
+        tanggalPengirim,
+        subtotal, delivery, total,
+        items
+      });
+
+      if (!res?.ok) throw res?.error;
+      editInvoiceNo.value = res.noInvoice;
+
+      await drawPreview({
+        customer, wa, items,
+        subtotal, delivery, total,
+        tanggalInvoice, tanggalPengirim,
+        noInvoice: res.noInvoice
+      });
+
+      alert("Invoice berhasil dibuat & disimpan");
+    } catch (e) {
+      alert("Preview tampil, tapi gagal simpan database");
+    }
   };
 
 })();
-
-
