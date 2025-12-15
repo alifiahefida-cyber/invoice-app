@@ -1,7 +1,9 @@
 // =====================================================
-// invoice.js — FINAL STABLE (JSONP, CORS-SAFE)
-// - Tanggal Invoice  : otomatis (hari ini) → PREVIEW
-// - Tanggal Pengirim : input user → DATABASE + PREVIEW
+// invoice.js — FINAL FULL STABLE
+// - Preview DIGAMBAR DULU (anti blank)
+// - Save database JSONP (CORS-safe)
+// - Tanggal Invoice  : otomatis (hari ini)
+// - Tanggal Pengirim : dari input user
 // =====================================================
 (function () {
 
@@ -32,7 +34,6 @@
     return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
   }
 
-  // AMAN untuk <input type="date"> (YYYY-MM-DD)
   function formatDateFromInput(dateStr) {
     if (!dateStr) return "";
     const [y, m, d] = dateStr.split("-");
@@ -57,7 +58,6 @@
     return new Promise((resolve, reject) => {
       const cb = "__save_cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
       let done = false;
-
       const script = document.createElement("script");
 
       window[cb] = function (res) {
@@ -86,10 +86,61 @@
     });
   }
 
+  // ===================== DRAW PREVIEW =====================
+  async function drawPreview(data) {
+    const canvas = document.getElementById("invoiceCanvas");
+    const ctx = canvas.getContext("2d");
+
+    await waitTemplateLoaded();
+
+    canvas.width = templateImg.width;
+    canvas.height = templateImg.height;
+    ctx.drawImage(templateImg, 0, 0);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "37px 'Comic Sans MS'";
+
+    // Customer
+    ctx.textAlign = "left";
+    ctx.fillText(data.customer, 200, 630);
+    ctx.fillText(data.wa, 200, 700);
+
+    // Invoice info
+    ctx.textAlign = "right";
+    ctx.fillText(data.noInvoice || "-", 1450, 575);
+    ctx.fillText(data.tanggalInvoice, 1450, 650);
+    ctx.fillText(data.tanggalPengirim, 1450, 725);
+
+    // Items
+    let y = 925;
+    data.items.forEach(it => {
+      ctx.textAlign = "left";
+      ctx.fillText(it.item, 200, y);
+      ctx.textAlign = "right";
+      ctx.fillText(formatNumber(it.price), 1050, y);
+      ctx.textAlign = "center";
+      ctx.fillText(it.qty, 1180, y);
+      ctx.textAlign = "right";
+      ctx.fillText(formatNumber(it.amount), 1475, y);
+      y += 60;
+    });
+
+    // Totals
+    ctx.textAlign = "right";
+    ctx.fillText(formatNumber(data.subtotal), 1475, 1755);
+    ctx.fillText(formatNumber(data.delivery), 1475, 1840);
+    ctx.fillText(formatNumber(data.total), 1475, 1915);
+
+    const previewEl = document.getElementById("invoicePreview");
+    previewEl.src = canvas.toDataURL("image/png");
+    previewEl.style.display = "block";
+    previewEl.style.visibility = "visible";
+  }
+
   // ===================== GENERATE INVOICE =====================
   window.generateInvoice = async function () {
 
-    // ===== ambil data =====
+    // ===== ambil data form =====
     const customer = document.getElementById("customer").value.trim();
     const wa = document.getElementById("wa").value.trim();
     const receiverName = document.getElementById("receiverName").value.trim();
@@ -112,7 +163,6 @@
       const item = row.querySelector(".productInput")?.value.trim();
       const qty = parseNumber(row.querySelector(".qty")?.value);
       const price = parseNumber(row.querySelector(".price")?.value);
-
       if (item && qty > 0) {
         items.push({ item, qty, price, amount: qty * price });
       }
@@ -120,145 +170,66 @@
 
     if (!items.length) return alert("Minimal 1 item");
 
-    // =====================
-    // TANGGAL
-    // =====================
-    const tanggalInvoice  = formatDateDMY(new Date());                 // hari ini
-    const tanggalPengirim = formatDateFromInput(shippingDateInput);    // dari input
+    // ===== tanggal =====
+    const tanggalInvoice = formatDateDMY(new Date());
+    const tanggalPengirim = formatDateFromInput(shippingDateInput);
 
-    // =====================
-    // SAVE DATABASE
-    // =====================
+    // ===== payload =====
     const payload = {
       namaPemesan: customer,
       noHpPemesan: wa,
       namaPenerima: receiverName,
       noHpPenerima: receiverPhone,
       alamatPenerima: receiverAddress,
-      tanggalPengirim: tanggalPengirim, // ⬅️ STRING dd/mm/yyyy
+      tanggalPengirim,
       subtotal,
       delivery,
       total,
       items
     };
 
-    let noInvoice;
+    // =====================
+    // PREVIEW DULU (PASTI MUNCUL)
+    // =====================
+    await drawPreview({
+      customer,
+      wa,
+      items,
+      subtotal,
+      delivery,
+      total,
+      tanggalInvoice,
+      tanggalPengirim,
+      noInvoice: ""
+    });
+
+    // =====================
+    // SAVE DATABASE
+    // =====================
     try {
       const res = await saveInvoiceToDb(payload);
       if (!res || !res.ok) throw res?.error || "Save gagal";
-      noInvoice = res.noInvoice;
-      document.getElementById("editInvoiceNo").value = noInvoice;
+
+      document.getElementById("editInvoiceNo").value = res.noInvoice;
+
+      // update preview dengan no invoice
+      await drawPreview({
+        customer,
+        wa,
+        items,
+        subtotal,
+        delivery,
+        total,
+        tanggalInvoice,
+        tanggalPengirim,
+        noInvoice: res.noInvoice
+      });
+
+      alert("Invoice berhasil dibuat & tersimpan di database");
     } catch (err) {
       console.error(err);
-      return alert("Gagal simpan ke database");
+      alert("Preview berhasil dibuat, tapi gagal simpan ke database");
     }
-
-    // =====================
-    // DRAW PREVIEW
-    // =====================
-    const canvas = document.getElementById("invoiceCanvas");
-    const ctx = canvas.getContext("2d");
-
-    await waitTemplateLoaded();
-
-    canvas.width = templateImg.width;
-    canvas.height = templateImg.height;
-    ctx.drawImage(templateImg, 0, 0);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "37px 'Comic Sans MS'";
-
-    ctx.textAlign = "left";
-    ctx.fillText(customer, 200, 630);
-    ctx.fillText(wa, 200, 700);
-
-    ctx.textAlign = "right";
-    ctx.fillText(noInvoice, 1450, 575);
-    ctx.fillText(tanggalInvoice, 1450, 650);   // 🧾 invoice
-    ctx.fillText(tanggalPengirim, 1450, 725);  // 🚚 kirim
-
-    let y = 925;
-    items.forEach(it => {
-      ctx.textAlign = "left";
-      ctx.fillText(it.item, 200, y);
-      ctx.textAlign = "right";
-      ctx.fillText(formatNumber(it.price), 1050, y);
-      ctx.textAlign = "center";
-      ctx.fillText(it.qty, 1180, y);
-      ctx.textAlign = "right";
-      ctx.fillText(formatNumber(it.amount), 1475, y);
-      y += 60;
-    });
-
-    ctx.textAlign = "right";
-    ctx.fillText(formatNumber(subtotal), 1475, 1755);
-    ctx.fillText(formatNumber(delivery), 1475, 1840);
-    ctx.fillText(formatNumber(total), 1475, 1915);
-
-    const previewEl = document.getElementById("invoicePreview");
-    previewEl.src = canvas.toDataURL("image/png");
-    previewEl.style.display = "block";
-    previewEl.style.visibility = "visible";
-
-    alert("Invoice berhasil dibuat & tersimpan di database");
   };
-window.downloadInvoiceImage = function () {
-  const img = document.getElementById("invoicePreview");
-  if (!img || !img.src) {
-    alert("Invoice belum dibuat");
-    return;
-  }
-
-  const noInvoice =
-    document.getElementById("editInvoiceNo")?.value || "invoice";
-
-  document.getElementById("downloadJpg").style.display = "inline-block";
-document.getElementById("shareBtn").style.display = "inline-block";
-
-  const a = document.createElement("a");
-  a.href = img.src;
-  a.download = `${noInvoice}.png`; // ⬅️ NAMA FILE = NO INVOICE
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-};
-window.sendInvoiceWhatsApp = function () {
-  const wa = document.getElementById("wa").value.trim();
-  if (!wa) {
-    alert("Nomor WhatsApp pemesan belum diisi");
-    return;
-  }
-
-  const total = document.getElementById("total").textContent.trim();
-
-  const pesan = 
-`Halo terima kasih sudah berbelanja di Betterbutterybatter.
-
-Total belanja Rp${total}
-
-Pembayaran melalui transfer ke:
-BCA 2150294366 a.n Efira
-
-Mohon lakukan pembayaran maksimal pukul 17.00 WIB
-H-1 Pengiriman`;
-
-  // bersihkan nomor WA
-  const nomor = wa
-    .replace(/^0/, "62")
-    .replace(/[^0-9]/g, "");
-
-  const url =
-    "https://wa.me/" +
-    nomor +
-    "?text=" +
-    encodeURIComponent(pesan);
-
-  window.open(url, "_blank");
-};
 
 })();
-
-
-
-
-
