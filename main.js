@@ -180,8 +180,8 @@
 window.cekPesanan = function () {
   const tanggal = document.getElementById("cekTanggal").value.trim();
 
-  if (!tanggal) {
-    alert("Tanggal belum diisi");
+  if (!/^\d{8}$/.test(tanggal)) {
+    alert("Format tanggal harus DDMMYYYY, contoh 17122025");
     return;
   }
 
@@ -211,15 +211,14 @@ window.cekPesanan = function () {
 
       box.appendChild(ul);
     })
-    .catch(err => {
-      console.error(err);
-      alert("Gagal mengambil data pesanan");
-    });
+    .catch(() => alert("Gagal cek pesanan"));
 };
 
 
 
+
 })();
+
 
 
 
