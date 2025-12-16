@@ -177,29 +177,28 @@
   // =====================
   // INIT
   // =====================
-  window.addEventListener("load", () => {
-    loadHarga();
-    updateTotals();
-  });
 window.cekPesanan = function () {
-  const input = document.getElementById("cekTanggal").value;
-  if (!input) {
-    alert("Tanggal belum dipilih");
+  const tanggalText = document.getElementById("cekTanggal").value.trim();
+
+  if (!tanggalText) {
+    alert("Tanggal belum diisi");
     return;
   }
 
-  // ubah yyyy-mm-dd → dd/mm/yyyy
-  const [y, m, d] = input.split("-");
-  const tanggal = `${d}/${m}/${y}`;
+  // validasi sederhana
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(tanggalText)) {
+    alert("Format tanggal harus dd/mm/yyyy");
+    return;
+  }
 
   const url =
     WEB_APP_URL +
     "?action=cekpesanan" +
     "&tanggal=" +
-    encodeURIComponent(tanggal);
+    encodeURIComponent(tanggalText);
 
   fetch(url)
-    .then(res => res.json())
+    .then(r => r.json())
     .then(res => {
       const box = document.getElementById("hasilPesanan");
       box.innerHTML = "";
@@ -215,15 +214,13 @@ window.cekPesanan = function () {
         li.textContent = `${it.produk} : ${it.qty}`;
         ul.appendChild(li);
       });
-
       box.appendChild(ul);
-    })
-    .catch(() => {
-      alert("Gagal cek pesanan");
     });
 };
 
+
 })();
+
 
 
 
