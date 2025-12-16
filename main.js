@@ -8,7 +8,7 @@
   // CONFIG
   // =====================
   const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbyXsQbxebY3KMFXmRrT3FVyU9n4lqy0nmoWuh1Q8cUUJwFBwb1aczzcHSHCIR-BFr-J/exec";
+    "https://script.google.com/macros/s/AKfycbzvdMFELdWnSHfgZnvVox_DxO3JiDpiV0qKf0_Ik2SlneCQYdKDj2Amg7dsAWV4JyY8/exec";
 
   const PRICE_URL = WEB_APP_URL + "?action=pricelist";
 
@@ -177,52 +177,12 @@
   // =====================
   // INIT
   // =====================
-window.cekPesanan = function () {
-  const tanggal = document.getElementById("cekTanggal").value.trim();
-
-  if (!/^\d{8}$/.test(tanggal)) {
-    alert("Format tanggal harus DDMMYYYY, contoh 17122025");
-    return;
-  }
-
-  const url =
-    WEB_APP_URL +
-    "?action=cekpesanan" +
-    "&tanggal=" +
-    encodeURIComponent(tanggal);
-
-  fetch(url)
-    .then(res => res.json())
-    .then(res => {
-      const box = document.getElementById("hasilPesanan");
-      box.innerHTML = "";
-
-      if (!res.items || res.items.length === 0) {
-        box.innerHTML = "<i>Tidak ada pesanan</i>";
-        return;
-      }
-
-      const ul = document.createElement("ul");
-      res.items.forEach(it => {
-        const li = document.createElement("li");
-        li.textContent = `${it.produk} : ${it.qty}`;
-        ul.appendChild(li);
-      });
-
-      box.appendChild(ul);
-    })
-    .catch(() => alert("Gagal cek pesanan"));
-};
-
-
-
+  window.addEventListener("load", () => {
+    loadHarga();
+    updateTotals();
+  });
 
 })();
-
-
-
-
-
 
 
 
