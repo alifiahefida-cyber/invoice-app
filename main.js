@@ -180,14 +180,8 @@
 window.cekPesanan = function () {
   const tanggal = document.getElementById("cekTanggal").value.trim();
 
-  if (!tanggalText) {
+  if (!tanggal) {
     alert("Tanggal belum diisi");
-    return;
-  }
-
-  // validasi sederhana
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(tanggalText)) {
-    alert("Format tanggal harus dd/mm/yyyy");
     return;
   }
 
@@ -195,10 +189,10 @@ window.cekPesanan = function () {
     WEB_APP_URL +
     "?action=cekpesanan" +
     "&tanggal=" +
-    encodeURIComponent(tanggalText);
+    encodeURIComponent(tanggal);
 
   fetch(url)
-    .then(r => r.json())
+    .then(res => res.json())
     .then(res => {
       const box = document.getElementById("hasilPesanan");
       box.innerHTML = "";
@@ -214,12 +208,19 @@ window.cekPesanan = function () {
         li.textContent = `${it.produk} : ${it.qty}`;
         ul.appendChild(li);
       });
+
       box.appendChild(ul);
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Gagal mengambil data pesanan");
     });
 };
 
 
+
 })();
+
 
 
 
