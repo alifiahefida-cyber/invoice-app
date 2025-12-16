@@ -1,6 +1,7 @@
-alert = ("tolong")
+alert("fix");
+
 // =====================================================
-// invoice.js — FINAL FULL (DROPDOWN & PREVIEW AMAN)
+// invoice.js — FIX FINAL (PREVIEW AMAN)
 // =====================================================
 (function () {
 
@@ -13,30 +14,23 @@ alert = ("tolong")
   const templateImg = new Image();
   let templateLoaded = false;
 
-  templateImg.onload = () => (templateLoaded = true);
+  templateImg.onload = () => templateLoaded = true;
   templateImg.src = TEMPLATE_SRC;
 
   function waitTemplateLoaded() {
     if (templateLoaded) return Promise.resolve();
-    return new Promise(res => {
-      templateImg.onload = () => {
-        templateLoaded = true;
-        res();
-      };
+    return new Promise(res => templateImg.onload = () => {
+      templateLoaded = true;
+      res();
     });
   }
 
   // ===================== HELPERS =====================
   const formatDateDMY = d =>
-    `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
 
   const parseNumber = x =>
-    Number(
-      String(x || "")
-        .replace(/\./g, "")
-        .replace(/,/g, ".")
-        .replace(/[^0-9.-]/g, "")
-    ) || 0;
+    Number(String(x || "").replace(/\./g,"").replace(/,/g,".").replace(/[^0-9.-]/g,"")) || 0;
 
   const formatNumber = n =>
     new Intl.NumberFormat("id-ID").format(Number(n) || 0);
@@ -73,9 +67,8 @@ alert = ("tolong")
   // ===================== DRAW PREVIEW =====================
   async function drawPreview(data) {
     const canvas = document.getElementById("invoiceCanvas");
-    if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
+
     await waitTemplateLoaded();
 
     canvas.width = templateImg.width;
@@ -114,48 +107,72 @@ alert = ("tolong")
 
     const img = canvas.toDataURL("image/png");
     const previewEl = document.getElementById("invoicePreview");
-    if (!previewEl) return;
-
     previewEl.src = img;
     previewEl.style.display = "block";
     previewEl.style.visibility = "visible";
 
-    document.getElementById("downloadJpg")?.style.setProperty("display", "inline-block");
-    document.getElementById("shareBtn")?.style.setProperty("display", "inline-block");
+    document.getElementById("downloadJpg").style.display = "inline-block";
+    document.getElementById("shareBtn").style.display = "inline-block";
   }
 
   // ===================== GENERATE =====================
-  window.generateInvoice = async function () {
+ window.generateInvoice = async function () {
 
-    const customer = document.getElementById("customer")?.value.trim();
-    const wa = document.getElementById("wa")?.value.trim();
-    const shippingDateRaw = document.getElementById("shippingDate")?.value;
+  const customer = document.getElementById("customer").value.trim();
+  const wa = document.getElementById("wa").value.trim();
+  const shippingDate = document.getElementById("shippingDate").value;
 
-    if (!customer) return alert("Nama customer wajib diisi");
-    if (!shippingDateRaw) return alert("Tanggal kirim wajib diisi");
+  if (!customer) return alert("Nama customer wajib diisi");
+  if (!shippingDate) return alert("Tanggal kirim wajib diisi");
 
-    if (typeof updateTotals === "function") updateTotals();
+  if (typeof updateTotals === "function") updateTotals();
 
-    const subtotal = parseNumber(document.getElementById("subtotal")?.textContent);
-    const delivery = parseNumber(document.getElementById("delivery")?.value);
-    const total = parseNumber(document.getElementById("total")?.textContent);
+  const subtotal = parseNumber(document.getElementById("subtotal").textContent);
+  const delivery = parseNumber(document.getElementById("delivery").value);
+  const total = parseNumber(document.getElementById("total").textContent);
 
-    const items = [];
-    document.querySelectorAll(".item-row").forEach(r => {
-      const item = r.querySelector(".productInput")?.value.trim();
-      const qty = parseNumber(r.querySelector(".qty")?.value);
-      const price = parseNumber(r.querySelector(".price")?.value);
-      if (item && qty > 0) {
-        items.push({ item, qty, price, amount: qty * price });
-      }
+  const items = [];
+  document.querySelectorAll(".item-row").forEach(r => {
+    const item = r.querySelector(".productInput")?.value.trim();
+    const qty = parseNumber(r.querySelector(".qty")?.value);
+    const price = parseNumber(r.querySelector(".price")?.value);
+    if (item && qty > 0) items.push({ item, qty, price, amount: qty * price });
+  });
+
+  if (!items.length) return alert("Minimal 1 item");
+
+  const tanggalInvoice = formatDateDMY(new Date());
+  const tanggalPengirim = formatDateDMY(new Date(shippingDate));
+
+  // PREVIEW DULU
+  await drawPreview({
+    customer,
+    wa,
+    items,
+    subtotal,
+    delivery,
+    total,
+    tanggalInvoice,
+    tanggalPengirim,
+    noInvoice: ""
+  });
+
+  // SAVE DATABASE
+  try {
+    const res = await saveInvoiceToDb({
+      namaPemesan: customer,
+      noHpPemesan: wa,
+      tanggalPengirim,
+      subtotal,
+      delivery,
+      total,
+      items
     });
 
-    if (!items.length) return alert("Minimal 1 item");
+    if (!res?.ok) throw res?.error;
 
-    const tanggalInvoice = formatDateDMY(new Date());
-    const tanggalPengirim = formatDateDMY(new Date(shippingDateRaw));
+    document.getElementById("editInvoiceNo").value = res.noInvoice;
 
-    // PREVIEW
     await drawPreview({
       customer,
       wa,
@@ -165,70 +182,46 @@ alert = ("tolong")
       total,
       tanggalInvoice,
       tanggalPengirim,
-      noInvoice: ""
+      noInvoice: res.noInvoice
     });
 
-    // SAVE DATABASE
-    try {
-      const res = await saveInvoiceToDb({
-        namaPemesan: customer,
-        noHpPemesan: wa,
-        tanggalPengirim,
-        subtotal,
-        delivery,
-        total,
-        items
-      });
-
-      if (!res?.ok) throw res?.error;
-
-      document.getElementById("editInvoiceNo").value = res.noInvoice;
-
-      await drawPreview({
-        customer,
-        wa,
-        items,
-        subtotal,
-        delivery,
-        total,
-        tanggalInvoice,
-        tanggalPengirim,
-        noInvoice: res.noInvoice
-      });
-
-      alert("Invoice berhasil dibuat & disimpan");
-    } catch (e) {
-      alert("Preview tampil, tapi gagal simpan database");
-    }
-  };
-
-  // ===================== DOWNLOAD =====================
+    alert("Invoice berhasil dibuat & disimpan");
+  } catch (e) {
+    alert("Preview tampil, tapi gagal simpan database");
+  }
+};
   window.downloadInvoiceImage = function () {
-    const img = document.getElementById("invoicePreview");
-    if (!img || !img.src) return alert("Preview belum tersedia");
+  const img = document.getElementById("invoicePreview");
+  if (!img || !img.src) {
+    alert("Preview belum tersedia");
+    return;
+  }
 
-    const noInvoice =
-      document.getElementById("editInvoiceNo")?.value || "invoice";
+  const noInvoice =
+    document.getElementById("editInvoiceNo").value || "invoice";
 
-    const link = document.createElement("a");
-    link.href = img.src;
-    link.download = noInvoice + ".png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const link = document.createElement("a");
+  link.href = img.src;
+  link.download = noInvoice + ".png";
 
-  // ===================== WHATSAPP =====================
-  window.sendInvoiceWhatsApp = function () {
-    const waRaw = document.getElementById("wa")?.value.trim();
-    if (!waRaw) return alert("Nomor WhatsApp pemesan belum diisi");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+window.sendInvoiceWhatsApp = function () {
+  const waRaw = document.getElementById("wa").value.trim();
+  if (!waRaw) {
+    alert("Nomor WhatsApp pemesan belum diisi");
+    return;
+  }
 
-    let wa = waRaw.replace(/[^0-9]/g, "");
-    if (wa.startsWith("0")) wa = "62" + wa.slice(1);
+  // normalisasi nomor (hapus 0, +, spasi)
+  let wa = waRaw.replace(/[^0-9]/g, "");
+  if (wa.startsWith("0")) wa = "62" + wa.slice(1);
 
-    const total = document.getElementById("total")?.textContent;
+  const total = document.getElementById("total").textContent;
 
-    const message = `
+  const message = `
 Halo terima kasih sudah berbelanja di Betterbutterybatter.
 
 Total belanja Rp${total}
@@ -237,12 +230,30 @@ Pembayaran melalui transfer ke:
 BCA 2150294366 a.n Efira
 
 Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
-    `.trim();
+  `.trim();
 
-    window.open(
-      "https://wa.me/" + wa + "?text=" + encodeURIComponent(message),
-      "_blank"
-    );
-  };
+  const url =
+    "https://wa.me/" +
+    wa +
+    "?text=" +
+    encodeURIComponent(message);
+
+  window.open(url, "_blank");
+};
 
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
