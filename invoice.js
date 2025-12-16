@@ -1,4 +1,4 @@
-alert("fixx");
+alert("fix");
 
 // =====================================================
 // invoice.js — FIX FINAL (PREVIEW AMAN)
@@ -118,18 +118,7 @@ alert("fixx");
     document.getElementById("downloadJpg").style.display = "inline-block";
     document.getElementById("shareBtn").style.display = "inline-block";
   }
-function formatTanggalText(tgl) {
-  if (!tgl) return "";
 
-  const s = String(tgl).replace(/\D/g, "");
-  if (s.length !== 8) return tgl;
-
-  const dd = s.slice(0, 2);
-  const mm = s.slice(2, 4);
-  const yyyy = s.slice(4, 8);
-
-  return `${dd}/${mm}/${yyyy}`;
-}
 
   // ===================== GENERATE =====================
  window.generateInvoice = async function () {
@@ -263,6 +252,7 @@ Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
 };
 
 })();
+
 
 
 
