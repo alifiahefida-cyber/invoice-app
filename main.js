@@ -181,8 +181,50 @@
     loadHarga();
     updateTotals();
   });
+window.cekPesanan = function () {
+  const input = document.getElementById("cekTanggal").value;
+  if (!input) {
+    alert("Tanggal belum dipilih");
+    return;
+  }
+
+  // ubah yyyy-mm-dd → dd/mm/yyyy
+  const [y, m, d] = input.split("-");
+  const tanggal = `${d}/${m}/${y}`;
+
+  const url =
+    WEB_APP_URL +
+    "?action=cekpesanan" +
+    "&tanggal=" +
+    encodeURIComponent(tanggal);
+
+  fetch(url)
+    .then(res => res.json())
+    .then(res => {
+      const box = document.getElementById("hasilPesanan");
+      box.innerHTML = "";
+
+      if (!res.items || res.items.length === 0) {
+        box.innerHTML = "<i>Tidak ada pesanan</i>";
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      res.items.forEach(it => {
+        const li = document.createElement("li");
+        li.textContent = `${it.produk} : ${it.qty}`;
+        ul.appendChild(li);
+      });
+
+      box.appendChild(ul);
+    })
+    .catch(() => {
+      alert("Gagal cek pesanan");
+    });
+};
 
 })();
+
 
 
 
