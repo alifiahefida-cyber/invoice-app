@@ -178,7 +178,7 @@
   // INIT
   // =====================
 window.cekPesanan = function () {
-  const tanggalText = document.getElementById("cekTanggal").value.trim();
+  const tanggal = document.getElementById("cekTanggal").value.trim();
 
   if (!tanggalText) {
     alert("Tanggal belum diisi");
@@ -220,6 +220,7 @@ window.cekPesanan = function () {
 
 
 })();
+
 
 
 
