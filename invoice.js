@@ -1,4 +1,4 @@
-alert("fix");
+alert("fixxx");
 
 // =====================================================
 // invoice.js — FIX FINAL (PREVIEW AMAN)
@@ -242,6 +242,7 @@ Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
 };
 
 })();
+
 
 
 
