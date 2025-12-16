@@ -106,7 +106,11 @@ alert("fix");
     ctx.fillText(formatNumber(data.total), 1475, 1915);
 
     const img = canvas.toDataURL("image/png");
-    const previewEl = document.getElementById("invoicePreview");
+    const previewEl = d
+      
+    
+    
+    ocument.getElementById("invoicePreview");
     previewEl.src = img;
     previewEl.style.display = "block";
     previewEl.style.visibility = "visible";
@@ -114,13 +118,30 @@ alert("fix");
     document.getElementById("downloadJpg").style.display = "inline-block";
     document.getElementById("shareBtn").style.display = "inline-block";
   }
+function formatTanggalText(tgl) {
+  if (!tgl) return "";
+
+  const s = String(tgl).replace(/\D/g, "");
+  if (s.length !== 8) return tgl;
+
+  const dd = s.slice(0, 2);
+  const mm = s.slice(2, 4);
+  const yyyy = s.slice(4, 8);
+
+  return `${dd}/${mm}/${yyyy}`;
+}
 
   // ===================== GENERATE =====================
  window.generateInvoice = async function () {
 
   const customer = document.getElementById("customer").value.trim();
   const wa = document.getElementById("wa").value.trim();
-  const shippingDate = document.getElementById("shippingDate").value;
+ const shippingDateRaw =
+  document.getElementById("shippingDate").value;
+
+const shippingDate =
+  formatTanggalText(shippingDateRaw);
+
 
   if (!customer) return alert("Nama customer wajib diisi");
   if (!shippingDate) return alert("Tanggal kirim wajib diisi");
@@ -242,6 +263,7 @@ Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
 };
 
 })();
+
 
 
 
