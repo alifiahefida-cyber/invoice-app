@@ -1,4 +1,4 @@
-alert("INVOICE.JS FIX");
+alert("INVOICE.JS FIXX");
 
 /**
  * =====================================================
@@ -215,3 +215,54 @@ alert("INVOICE.JS FIX");
       alert("Gagal menyimpan invoice");
     }
   };
+
+  /* ================= DOWNLOAD ================= */
+  window.downloadInvoiceImage = function () {
+    const img = document.getElementById("invoicePreview");
+    if (!img || !img.src) {
+      alert("Preview belum tersedia");
+      return;
+    }
+
+    const noInv =
+      document.getElementById("editInvoiceNo").value || "invoice";
+
+    const a = document.createElement("a");
+    a.href = img.src;
+    a.download = noInv + ".png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  /* ================= WHATSAPP ================= */
+  window.sendInvoiceWhatsApp = function () {
+    let wa = document.getElementById("wa").value.trim();
+    if (!wa) {
+      alert("Nomor WhatsApp belum diisi");
+      return;
+    }
+
+    wa = wa.replace(/[^0-9]/g, "");
+    if (wa.startsWith("0")) wa = "62" + wa.slice(1);
+
+    const total = document.getElementById("total").textContent;
+
+    const msg = `
+Halo terima kasih sudah berbelanja di Betterbutterybatter.
+
+Total belanja Rp${total}
+
+Pembayaran melalui transfer ke:
+BCA 2150294366 a.n Efira
+
+Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
+    `.trim();
+
+    window.open(
+      "https://wa.me/" + wa + "?text=" + encodeURIComponent(msg),
+      "_blank"
+    );
+  };
+
+})(); // ⬅️⬅️⬅️ INI YANG HILANG
