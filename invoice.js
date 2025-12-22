@@ -1,4 +1,4 @@
-alert("INVOICE.JS FIXX");
+alert("INVOICE.JS FIX");
 
 /**
  * =====================================================
@@ -215,6 +215,3 @@ alert("INVOICE.JS FIXX");
       alert("Gagal menyimpan invoice");
     }
   };
-
-  /* ================= DOWNLOAD ================= */
-
