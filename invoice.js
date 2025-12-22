@@ -1,12 +1,8 @@
-alert("INVOICE.JS FIXX");
+alert("INVOICE.JS LOADED");
 
 /**
  * =====================================================
- * invoice.js — FINAL STABLE
- * FIX:
- * 1. Invoice number selalu muncul
- * 2. Tanggal kirim konsisten
- * 3. Rincian selalu terkirim
+ * invoice.js — FINAL (MATCH WITH CURRENT HTML)
  * =====================================================
  */
 (function () {
@@ -57,17 +53,13 @@ alert("INVOICE.JS FIXX");
         resolve(res);
       };
 
-      const b64 = btoa(
-        unescape(encodeURIComponent(JSON.stringify(payload)))
-      );
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
 
       script.src =
         WEB_APP_URL +
         "?action=saveinvoice" +
-        "&payload=" +
-        encodeURIComponent(b64) +
-        "&callback=" +
-        cb;
+        "&payload=" + encodeURIComponent(b64) +
+        "&callback=" + cb;
 
       script.onerror = () => {
         delete window[cb];
@@ -93,19 +85,41 @@ alert("INVOICE.JS FIXX");
     ctx.fillStyle = "#ffffff";
     ctx.font = "37px 'Comic Sans MS'";
 
-    // CUSTOMER
+    /* ===== CUSTOMER ===== */
     ctx.textAlign = "left";
     ctx.fillText(data.customer, 200, 630);
     ctx.fillText(data.wa, 200, 700);
 
-    // HEADER KANAN
+    /* ===== RECEIVER ===== */
+    ctx.fillText(data.receiverName, 200, 770);
+    ctx.fillText(data.receiverPhone, 200, 840);
+
+    // alamat wrap
+    const maxWidth = 900;
+    let line = "";
+    let yAddr = 910;
+    const words = (data.receiverAddress || "").split(" ");
+
+    words.forEach(w => {
+      const test = line + w + " ";
+      if (ctx.measureText(test).width > maxWidth) {
+        ctx.fillText(line, 200, yAddr);
+        line = w + " ";
+        yAddr += 50;
+      } else {
+        line = test;
+      }
+    });
+    if (line) ctx.fillText(line, 200, yAddr);
+
+    /* ===== HEADER RIGHT ===== */
     ctx.textAlign = "right";
     ctx.fillText(data.noInvoice, 1450, 575);
     ctx.fillText(data.tanggalInvoice, 1450, 650);
     ctx.fillText(data.tanggalPengirim, 1450, 725);
 
-    // ITEMS
-    let y = 925;
+    /* ===== ITEMS ===== */
+    let y = 1020;
     data.items.forEach(it => {
       ctx.textAlign = "left";
       ctx.fillText(it.item, 200, y);
@@ -118,13 +132,13 @@ alert("INVOICE.JS FIXX");
       y += 60;
     });
 
-    // TOTALS
+    /* ===== TOTAL ===== */
     ctx.textAlign = "right";
     ctx.fillText(formatNumber(data.subtotal), 1475, 1755);
     ctx.fillText(formatNumber(data.delivery), 1475, 1840);
     ctx.fillText(formatNumber(data.total), 1475, 1915);
 
-    // PREVIEW IMAGE
+    /* ===== SHOW PREVIEW ===== */
     const img = canvas.toDataURL("image/png");
     const preview = document.getElementById("invoicePreview");
     preview.src = img;
@@ -135,11 +149,16 @@ alert("INVOICE.JS FIXX");
     document.getElementById("shareBtn").style.display = "inline-block";
   }
 
-  /* ================= GENERATE INVOICE ================= */
+  /* ================= GENERATE ================= */
   window.generateInvoice = async function () {
 
     const customer = document.getElementById("customer").value.trim();
     const wa = document.getElementById("wa").value.trim();
+
+    const receiverName = document.getElementById("receiverName").value.trim();
+    const receiverPhone = document.getElementById("receiverPhone").value.trim();
+    const receiverAddress = document.getElementById("receiverAddress").value.trim();
+
     const shippingDate = document.getElementById("shippingDate").value;
 
     if (!customer) return alert("Nama customer wajib diisi");
@@ -147,29 +166,17 @@ alert("INVOICE.JS FIXX");
 
     if (typeof updateTotals === "function") updateTotals();
 
-    const subtotal = parseNumber(
-      document.getElementById("subtotal").textContent
-    );
-    const delivery = parseNumber(
-      document.getElementById("delivery").value
-    );
-    const total = parseNumber(
-      document.getElementById("total").textContent
-    );
+    const subtotal = parseNumber(document.getElementById("subtotal").textContent);
+    const delivery = parseNumber(document.getElementById("delivery").value);
+    const total = parseNumber(document.getElementById("total").textContent);
 
-    // ITEMS (PASTI TERKIRIM)
     const items = [];
     document.querySelectorAll(".item-row").forEach(r => {
       const item = r.querySelector(".productInput")?.value.trim();
       const qty = parseNumber(r.querySelector(".qty")?.value);
       const price = parseNumber(r.querySelector(".price")?.value);
       if (item && qty > 0) {
-        items.push({
-          item,
-          qty,
-          price,
-          amount: qty * price
-        });
+        items.push({ item, qty, price, amount: qty * price });
       }
     });
 
@@ -178,11 +185,13 @@ alert("INVOICE.JS FIXX");
     const tanggalInvoice = formatDMY(new Date());
     const tanggalPengirim = formatDMY(new Date(shippingDate));
 
-    /* ===== SAVE KE DATABASE DULU ===== */
     try {
       const res = await saveInvoice({
         namaPemesan: customer,
         noHpPemesan: wa,
+        namaPenerima: receiverName,
+        noHpPenerima: receiverPhone,
+        alamatPenerima: receiverAddress,
         tanggalPengirim,
         subtotal,
         delivery,
@@ -192,13 +201,14 @@ alert("INVOICE.JS FIXX");
 
       if (!res?.ok) throw res?.error;
 
-      // SET NO INVOICE
       document.getElementById("editInvoiceNo").value = res.noInvoice;
 
-      /* ===== PREVIEW SEKALI SAJA (FINAL) ===== */
       await drawPreview({
         customer,
         wa,
+        receiverName,
+        receiverPhone,
+        receiverAddress,
         items,
         subtotal,
         delivery,
@@ -212,21 +222,16 @@ alert("INVOICE.JS FIXX");
 
     } catch (e) {
       console.error(e);
-      alert("Gagal menyimpan invoice");
+      alert("Gagal membuat invoice");
     }
   };
 
   /* ================= DOWNLOAD ================= */
   window.downloadInvoiceImage = function () {
     const img = document.getElementById("invoicePreview");
-    if (!img || !img.src) {
-      alert("Preview belum tersedia");
-      return;
-    }
+    if (!img?.src) return alert("Preview belum tersedia");
 
-    const noInv =
-      document.getElementById("editInvoiceNo").value || "invoice";
-
+    const noInv = document.getElementById("editInvoiceNo").value || "invoice";
     const a = document.createElement("a");
     a.href = img.src;
     a.download = noInv + ".png";
@@ -238,10 +243,7 @@ alert("INVOICE.JS FIXX");
   /* ================= WHATSAPP ================= */
   window.sendInvoiceWhatsApp = function () {
     let wa = document.getElementById("wa").value.trim();
-    if (!wa) {
-      alert("Nomor WhatsApp belum diisi");
-      return;
-    }
+    if (!wa) return alert("Nomor WhatsApp belum diisi");
 
     wa = wa.replace(/[^0-9]/g, "");
     if (wa.startsWith("0")) wa = "62" + wa.slice(1);
@@ -265,4 +267,4 @@ Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
     );
   };
 
-})(); // ⬅️⬅️⬅️ INI YANG HILANG
+})();
