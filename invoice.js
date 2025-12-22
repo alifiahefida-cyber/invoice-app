@@ -1,44 +1,54 @@
 alert("INVOICE.JS FIX FINAL KELOAD");
 
-// =====================================================
-// invoice.js — FIX FINAL (PREVIEW AMAN)
-// =====================================================
+/**
+ * =====================================================
+ * invoice.js — FINAL STABLE
+ * FIX:
+ * 1. Invoice number selalu muncul
+ * 2. Tanggal kirim konsisten
+ * 3. Rincian selalu terkirim
+ * =====================================================
+ */
 (function () {
 
-  // ===================== CONFIG =====================
+  /* ================= CONFIG ================= */
   const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbyXsQbxebY3KMFXmRrT3FVyU9n4lqy0nmoWuh1Q8cUUJwFBwb1aczzcHSHCIR-BFr-J/exec";
+    "https://script.google.com/macros/s/AKfycbzvdMFELdWnSHfgZnvVox_DxO3JiDpiV0qKf0_Ik2SlneCQYdKDj2Amg7dsAWV4JyY8/exec";
 
-  // ===================== TEMPLATE =====================
+  /* ================= TEMPLATE ================= */
   const TEMPLATE_SRC = "./invoice-template.png";
   const templateImg = new Image();
   let templateLoaded = false;
 
-  templateImg.onload = () => templateLoaded = true;
+  templateImg.onload = () => (templateLoaded = true);
   templateImg.src = TEMPLATE_SRC;
 
-  function waitTemplateLoaded() {
+  function waitTemplate() {
     if (templateLoaded) return Promise.resolve();
-    return new Promise(res => templateImg.onload = () => {
-      templateLoaded = true;
-      res();
-    });
+    return new Promise(res => (templateImg.onload = () => res()));
   }
 
-  // ===================== HELPERS =====================
-  const formatDateDMY = d =>
-    `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  /* ================= HELPERS ================= */
+  const formatDMY = d =>
+    `${String(d.getDate()).padStart(2, "0")}/${String(
+      d.getMonth() + 1
+    ).padStart(2, "0")}/${d.getFullYear()}`;
 
   const parseNumber = x =>
-    Number(String(x || "").replace(/\./g,"").replace(/,/g,".").replace(/[^0-9.-]/g,"")) || 0;
+    Number(
+      String(x || "")
+        .replace(/\./g, "")
+        .replace(/,/g, ".")
+        .replace(/[^0-9.-]/g, "")
+    ) || 0;
 
   const formatNumber = n =>
     new Intl.NumberFormat("id-ID").format(Number(n) || 0);
 
-  // ===================== JSONP SAVE =====================
-  function saveInvoiceToDb(payload) {
+  /* ================= JSONP SAVE ================= */
+  function saveInvoice(payload) {
     return new Promise((resolve, reject) => {
-      const cb = "__save_cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      const cb = "__cb_" + Date.now();
       const script = document.createElement("script");
 
       window[cb] = res => {
@@ -47,29 +57,34 @@ alert("INVOICE.JS FIX FINAL KELOAD");
         resolve(res);
       };
 
-      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      const b64 = btoa(
+        unescape(encodeURIComponent(JSON.stringify(payload)))
+      );
+
       script.src =
         WEB_APP_URL +
         "?action=saveinvoice" +
-        "&payload=" + encodeURIComponent(b64) +
-        "&callback=" + cb;
+        "&payload=" +
+        encodeURIComponent(b64) +
+        "&callback=" +
+        cb;
 
       script.onerror = () => {
         delete window[cb];
         script.remove();
-        reject("JSONP gagal");
+        reject("JSONP error");
       };
 
       document.body.appendChild(script);
     });
   }
 
-  // ===================== DRAW PREVIEW =====================
+  /* ================= DRAW PREVIEW ================= */
   async function drawPreview(data) {
+    await waitTemplate();
+
     const canvas = document.getElementById("invoiceCanvas");
     const ctx = canvas.getContext("2d");
-
-    await waitTemplateLoaded();
 
     canvas.width = templateImg.width;
     canvas.height = templateImg.height;
@@ -78,15 +93,18 @@ alert("INVOICE.JS FIX FINAL KELOAD");
     ctx.fillStyle = "#ffffff";
     ctx.font = "37px 'Comic Sans MS'";
 
+    // CUSTOMER
     ctx.textAlign = "left";
     ctx.fillText(data.customer, 200, 630);
     ctx.fillText(data.wa, 200, 700);
 
+    // HEADER KANAN
     ctx.textAlign = "right";
-    ctx.fillText(data.noInvoice || "-", 1450, 575);
+    ctx.fillText(data.noInvoice, 1450, 575);
     ctx.fillText(data.tanggalInvoice, 1450, 650);
     ctx.fillText(data.tanggalPengirim, 1450, 725);
 
+    // ITEMS
     let y = 925;
     data.items.forEach(it => {
       ctx.textAlign = "left";
@@ -100,149 +118,102 @@ alert("INVOICE.JS FIX FINAL KELOAD");
       y += 60;
     });
 
+    // TOTALS
     ctx.textAlign = "right";
     ctx.fillText(formatNumber(data.subtotal), 1475, 1755);
     ctx.fillText(formatNumber(data.delivery), 1475, 1840);
     ctx.fillText(formatNumber(data.total), 1475, 1915);
 
+    // PREVIEW IMAGE
     const img = canvas.toDataURL("image/png");
-    const previewEl = document.getElementById("invoicePreview");
-    previewEl.src = img;
-    previewEl.style.display = "block";
-    previewEl.style.visibility = "visible";
+    const preview = document.getElementById("invoicePreview");
+    preview.src = img;
+    preview.style.display = "block";
+    preview.style.visibility = "visible";
 
     document.getElementById("downloadJpg").style.display = "inline-block";
     document.getElementById("shareBtn").style.display = "inline-block";
   }
 
-  // ===================== GENERATE =====================
- window.generateInvoice = async function () {
+  /* ================= GENERATE INVOICE ================= */
+  window.generateInvoice = async function () {
 
-  const customer = document.getElementById("customer").value.trim();
-  const wa = document.getElementById("wa").value.trim();
-  const shippingDate = document.getElementById("shippingDate").value;
+    const customer = document.getElementById("customer").value.trim();
+    const wa = document.getElementById("wa").value.trim();
+    const shippingDate = document.getElementById("shippingDate").value;
 
-  if (!customer) return alert("Nama customer wajib diisi");
-  if (!shippingDate) return alert("Tanggal kirim wajib diisi");
+    if (!customer) return alert("Nama customer wajib diisi");
+    if (!shippingDate) return alert("Tanggal kirim wajib diisi");
 
-  if (typeof updateTotals === "function") updateTotals();
+    if (typeof updateTotals === "function") updateTotals();
 
-  const subtotal = parseNumber(document.getElementById("subtotal").textContent);
-  const delivery = parseNumber(document.getElementById("delivery").value);
-  const total = parseNumber(document.getElementById("total").textContent);
+    const subtotal = parseNumber(
+      document.getElementById("subtotal").textContent
+    );
+    const delivery = parseNumber(
+      document.getElementById("delivery").value
+    );
+    const total = parseNumber(
+      document.getElementById("total").textContent
+    );
 
-  const items = [];
-  document.querySelectorAll(".item-row").forEach(r => {
-    const item = r.querySelector(".productInput")?.value.trim();
-    const qty = parseNumber(r.querySelector(".qty")?.value);
-    const price = parseNumber(r.querySelector(".price")?.value);
-    if (item && qty > 0) items.push({ item, qty, price, amount: qty * price });
-  });
-
-  if (!items.length) return alert("Minimal 1 item");
-
-  const tanggalInvoice = formatDateDMY(new Date());
-  const tanggalPengirim = formatDateDMY(new Date(shippingDate));
-
-  // PREVIEW DULU
-  await drawPreview({
-    customer,
-    wa,
-    items,
-    subtotal,
-    delivery,
-    total,
-    tanggalInvoice,
-    tanggalPengirim,
-    noInvoice: ""
-  });
-
-  // SAVE DATABASE
-  try {
-    const res = await saveInvoiceToDb({
-      namaPemesan: customer,
-      noHpPemesan: wa,
-      tanggalPengirim,
-      subtotal,
-      delivery,
-      total,
-      items
+    // ITEMS (PASTI TERKIRIM)
+    const items = [];
+    document.querySelectorAll(".item-row").forEach(r => {
+      const item = r.querySelector(".productInput")?.value.trim();
+      const qty = parseNumber(r.querySelector(".qty")?.value);
+      const price = parseNumber(r.querySelector(".price")?.value);
+      if (item && qty > 0) {
+        items.push({
+          item,
+          qty,
+          price,
+          amount: qty * price
+        });
+      }
     });
 
-    if (!res?.ok) throw res?.error;
+    if (!items.length) return alert("Minimal 1 item");
 
-    document.getElementById("editInvoiceNo").value = res.noInvoice;
+    const tanggalInvoice = formatDMY(new Date());
+    const tanggalPengirim = formatDMY(new Date(shippingDate));
 
-    await drawPreview({
-      customer,
-      wa,
-      items,
-      subtotal,
-      delivery,
-      total,
-      tanggalInvoice,
-      tanggalPengirim,
-      noInvoice: res.noInvoice
-    });
+    /* ===== SAVE KE DATABASE DULU ===== */
+    try {
+      const res = await saveInvoice({
+        namaPemesan: customer,
+        noHpPemesan: wa,
+        tanggalPengirim,
+        subtotal,
+        delivery,
+        total,
+        items
+      });
 
-    alert("Invoice berhasil dibuat & disimpan");
-  } catch (e) {
-    alert("Preview tampil, tapi gagal simpan database");
-  }
-};
-  window.downloadInvoiceImage = function () {
-  const img = document.getElementById("invoicePreview");
-  if (!img || !img.src) {
-    alert("Preview belum tersedia");
-    return;
-  }
+      if (!res?.ok) throw res?.error;
 
-  const noInvoice =
-    document.getElementById("editInvoiceNo").value || "invoice";
+      // SET NO INVOICE
+      document.getElementById("editInvoiceNo").value = res.noInvoice;
 
-  const link = document.createElement("a");
-  link.href = img.src;
-  link.download = noInvoice + ".png";
+      /* ===== PREVIEW SEKALI SAJA (FINAL) ===== */
+      await drawPreview({
+        customer,
+        wa,
+        items,
+        subtotal,
+        delivery,
+        total,
+        tanggalInvoice,
+        tanggalPengirim,
+        noInvoice: res.noInvoice
+      });
 
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-window.sendInvoiceWhatsApp = function () {
-  const waRaw = document.getElementById("wa").value.trim();
-  if (!waRaw) {
-    alert("Nomor WhatsApp pemesan belum diisi");
-    return;
-  }
+      alert("Invoice berhasil dibuat");
 
-  // normalisasi nomor (hapus 0, +, spasi)
-  let wa = waRaw.replace(/[^0-9]/g, "");
-  if (wa.startsWith("0")) wa = "62" + wa.slice(1);
+    } catch (e) {
+      console.error(e);
+      alert("Gagal menyimpan invoice");
+    }
+  };
 
-  const total = document.getElementById("total").textContent;
-
-  const message = `
-Halo terima kasih sudah berbelanja di Betterbutterybatter.
-
-Total belanja Rp${total}
-
-Pembayaran melalui transfer ke:
-BCA 2150294366 a.n Efira
-
-Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
-  `.trim();
-
-  const url =
-    "https://wa.me/" +
-    wa +
-    "?text=" +
-    encodeURIComponent(message);
-
-  window.open(url, "_blank");
-};
-
-})();
-
-
-
-
+  /* ================= DOWNLOAD ================= */
