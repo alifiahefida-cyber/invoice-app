@@ -1,4 +1,4 @@
-alert("INVOICE.JS LOADED");
+alert("INVOICE.JS FIX");
 
 /**
  * =====================================================
@@ -91,26 +91,7 @@ alert("INVOICE.JS LOADED");
     ctx.fillText(data.wa, 200, 700);
 
     /* ===== RECEIVER ===== */
-    ctx.fillText(data.receiverName, 200, 770);
-    ctx.fillText(data.receiverPhone, 200, 840);
 
-    // alamat wrap
-    const maxWidth = 900;
-    let line = "";
-    let yAddr = 910;
-    const words = (data.receiverAddress || "").split(" ");
-
-    words.forEach(w => {
-      const test = line + w + " ";
-      if (ctx.measureText(test).width > maxWidth) {
-        ctx.fillText(line, 200, yAddr);
-        line = w + " ";
-        yAddr += 50;
-      } else {
-        line = test;
-      }
-    });
-    if (line) ctx.fillText(line, 200, yAddr);
 
     /* ===== HEADER RIGHT ===== */
     ctx.textAlign = "right";
@@ -268,3 +249,4 @@ Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
   };
 
 })();
+
