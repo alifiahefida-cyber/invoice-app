@@ -1,4 +1,4 @@
-alert("INVOICE.JS FIXX");
+alert("INVOICE.JS FIX");
 
 /**
  * =====================================================
@@ -283,4 +283,5 @@ Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
   };
 
 })();
+
 
