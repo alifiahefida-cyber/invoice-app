@@ -10,7 +10,7 @@ alert("INVOICE.JS FIXX");
 
   /* ================= CONFIG ================= */
   const WEB_APP_URL =
-    "https://script.google.com/macros/s/AKfycbzvdMFELdWnSHfgZnvVox_DxO3JiDpiV0qKf0_Ik2SlneCQYdKDj2Amg7dsAWV4JyY8/exec";
+    "https://script.google.com/macros/s/AKfycbyXsQbxebY3KMFXmRrT3FVyU9n4lqy0nmoWuh1Q8cUUJwFBwb1aczzcHSHCIR-BFr-J/exec";
 
   /* ================= TEMPLATE ================= */
   const TEMPLATE_SRC = "./invoice-template.png";
@@ -283,3 +283,4 @@ Mohon lakukan pembayaran maksimal pukul 17.00 WIB H-1 pengiriman.
   };
 
 })();
+
